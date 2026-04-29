@@ -1,0 +1,22 @@
+root = true
+
+[*]
+charset = utf-8
+# setting end_of_line may mess up editing across operating systems
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = 150
+csharp_space_after_cast = true
+resharper_csharp_place_attribute_on_same_line = false
+resharper_csharp_keep_existing_linebreaks = true
+resharper_wrap_parameters_style = chop_if_long
+resharper_wrap_after_declaration_lpar = true
+resharper_align_linq_query = true
+resharper_csharp_align_linq_query = true
+resharper_blank_lines_around_single_line_auto_property = 1
+
+[*.{py,cs,csproj}]
+indent_size = 4

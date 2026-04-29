@@ -1,0 +1,82 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:behaviors="using:GeneralsZeroHourEditor.Behaviors">
+  <Style TargetType="TextBox">
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="MinWidth" Value="200" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="TextBox">
+          <Grid>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ContentPresenter x:Name="HeaderContentPresenter"
+                              Grid.Row="0"
+                              Grid.Column="0"
+                              Grid.ColumnSpan="2"
+                              Content="{TemplateBinding Header}"
+                              ContentTemplate="{TemplateBinding HeaderTemplate}"
+                              FontWeight="Normal"
+                              Foreground="{ThemeResource TextControlHeaderForeground}"
+                              Margin="{ThemeResource TextBoxTopHeaderMargin}"
+                              x:DeferLoadStrategy="Lazy" />
+            <Border x:Name="BackgroundElement"
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="2"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="{TemplateBinding CornerRadius}"
+                    MinHeight="{ThemeResource TextControlThemeMinHeight}" />
+            <ScrollViewer x:Name="ContentElement"
+                          Grid.Row="1"
+                          Grid.Column="0"
+                          AutomationProperties.AccessibilityView="Raw"
+                          HorizontalScrollMode="{TemplateBinding ScrollViewer.HorizontalScrollMode}"
+                          HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                          IsTabStop="False"
+                          IsHorizontalRailEnabled="{TemplateBinding ScrollViewer.IsHorizontalRailEnabled}"
+                          IsVerticalRailEnabled="{TemplateBinding ScrollViewer.IsVerticalRailEnabled}"
+                          IsDeferredScrollingEnabled="{TemplateBinding ScrollViewer.IsDeferredScrollingEnabled}"
+                          Margin="{TemplateBinding BorderThickness}"
+                          Padding="{TemplateBinding Padding}"
+                          VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                          VerticalScrollMode="{TemplateBinding ScrollViewer.VerticalScrollMode}"
+                          ZoomMode="Disabled" />
+            <Button x:Name="DeleteButton"
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Visibility="Collapsed"
+                    FontSize="{TemplateBinding FontSize}"
+                    MinWidth="34"
+                    VerticalAlignment="Stretch"
+                    IsTabStop="False" />
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style TargetType="Control"
+         x:Key="DefaultControlStyle">
+    <Setter Property="FontFamily"
+            Value="{StaticResource PrimaryFont}" />
+    <Setter Property="FontSize"
+            Value="{StaticResource PrimaryFontSize}" />
+  </Style>
+
+  <Style TargetType="TextBlock"
+         x:Key="DefaultTextBlockStyle">
+    <Setter Property="FontFamily"
+            Value="{StaticResource PrimaryFont}" />
+    <Setter Property="FontSize"
+            Value="{StaticResource PrimaryFontSize}" />
+  </Style>
+</ResourceDictionary>

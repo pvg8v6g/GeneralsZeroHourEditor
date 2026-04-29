@@ -1,0 +1,39 @@
+﻿<UserControl x:Class="GeneralsZeroHourEditor.UX.Components.EngineRadioIcon.EngineRadioIcon"
+             x:Name="EngineRadioIconControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:engineRadioIcon="using:GeneralsZeroHourEditor.UX.Components.EngineRadioIcon"
+             xmlns:engineRadioIcon1="using:GeneralsZeroHourEditor.UX.Components.EngineRadioIcon"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance engineRadioIcon1:EngineRadioIconModel}">
+  <RadioButton GroupName="{x:Bind GroupName, Mode=OneWay}"
+               Style="{StaticResource ImageRadioButtonStyle}"
+               IsChecked="{Binding IsChecked, Mode=TwoWay}"
+               Command="{Binding Command, ElementName=EngineRadioIconControl}"
+               CommandParameter="{Binding CommandIndex}"
+               ToolTipService.ToolTip="{Binding Tooltip}"
+               PointerEntered="OnPointerEntered">
+    <FlyoutBase.AttachedFlyout>
+      <MenuFlyout />
+    </FlyoutBase.AttachedFlyout>
+    <Grid>
+      <!-- Template with Rect (clipped Canvas) -->
+      <Canvas Width="{Binding CroppedImage.Rect, Converter={StaticResource RectWidthConverter}}"
+              Height="{Binding CroppedImage.Rect, Converter={StaticResource RectHeightConverter}}"
+              Visibility="{Binding CroppedImage.Rect, Converter={StaticResource NullToCollapsedConverter}}">
+        <Canvas.Clip>
+          <RectangleGeometry Rect="{Binding CroppedImage.Rect, Converter={StaticResource RectNormalizedConverter}}" />
+        </Canvas.Clip>
+        <Image Source="{Binding CroppedImage.ImageSource}"
+               Canvas.Left="{Binding CroppedImage.Rect, Converter={StaticResource RectNegativeXConverter}}"
+               Canvas.Top="{Binding CroppedImage.Rect, Converter={StaticResource RectNegativeYConverter}}" />
+      </Canvas>
+
+      <!-- Template without Rect (plain Image) -->
+      <Image Source="{Binding CroppedImage.ImageSource}"
+             Visibility="{Binding CroppedImage.Rect, Converter={StaticResource NullToVisibleConverter}}" />
+    </Grid>
+  </RadioButton>
+</UserControl>

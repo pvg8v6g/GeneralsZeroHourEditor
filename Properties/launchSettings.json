@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "GeneralsZeroHourEditor (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "GeneralsZeroHourEditor (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
