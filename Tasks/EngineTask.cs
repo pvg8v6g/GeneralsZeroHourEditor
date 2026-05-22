@@ -12,7 +12,15 @@ public abstract class EngineTask : PropertyChangedUpdater
         set
         {
             field = value;
-            Progress = (int) (100 * ((decimal) value / (decimal) MaxWork));
+            // Prevent division by zero: if there is no defined workload, consider the task complete.
+            if (MaxWork <= 0)
+            {
+                Progress = 100;
+            }
+            else
+            {
+                Progress = (int)(100 * ((decimal)value / (decimal)MaxWork));
+            }
         }
     }
 

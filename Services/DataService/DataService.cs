@@ -83,6 +83,18 @@ public partial class DataService : IDataService
         if (!File.Exists(filePath)) return "{}";
 
         var lines = File.ReadAllLines(filePath);
+        return ParseIniLinesToJson(lines);
+    }
+
+    public string ParseIniContentToJson(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content)) return "[]";
+        var lines = content.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        return ParseIniLinesToJson(lines);
+    }
+
+    private string ParseIniLinesToJson(IEnumerable<string> lines)
+    {
         var stack = new Stack<List<object>>();
         var blockTypeStack = new Stack<string>();
         List<object> currentList = [];
@@ -127,137 +139,7 @@ public partial class DataService : IDataService
         return JsonSerializer.Serialize(currentList, _jsonOptions);
     }
 
-    public void GenerateInfantrySchema(string projectDataDir, string outputSchemaPath)
-    {
-        if (string.IsNullOrWhiteSpace(projectDataDir) || !Directory.Exists(projectDataDir)) return;
-
-        var schema = new Dictionary<string, object?>
-        {
-            ["profile"] = "Infantry",
-            ["modules"] = new Dictionary<string, object?>(),
-            ["catalogs"] = new Dictionary<string, object?>()
-        };
-
-        // Collect catalogs from any JSON containing the respective top-level blocks
-        var catalogs = (Dictionary<string, object?>) schema["catalogs"]!;
-        catalogs["Weapon"] = CollectTopLevelNames(projectDataDir, "Weapon");
-        catalogs["Armor"] = CollectTopLevelNames(projectDataDir, "Armor");
-        catalogs["FXList"] = CollectTopLevelNames(projectDataDir, "FXList");
-        catalogs["Locomotor"] = CollectTopLevelNames(projectDataDir, "Locomotor");
-
-        // Mine Object blocks with KindOf containing INFANTRY
-        var moduleMap = new Dictionary<string, ModuleAggregate>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var jsonPath in Directory.EnumerateFiles(projectDataDir, "*.json", SearchOption.AllDirectories))
-        {
-            try
-            {
-                using var stream = File.OpenRead(jsonPath);
-                using var doc = JsonDocument.Parse(stream);
-                if (doc.RootElement.ValueKind != JsonValueKind.Array) continue;
-
-                foreach (var element in doc.RootElement.EnumerateArray())
-                {
-                    if (element.ValueKind != JsonValueKind.Object) continue;
-                    if (!element.TryGetProperty("Type", out var typeProp)) continue;
-                    if (!typeProp.ValueEquals("Object")) continue;
-
-                    // Check KindOf for INFANTRY
-                    if (!element.TryGetProperty("Content", out var content) || content.ValueKind != JsonValueKind.Array) continue;
-                    var isInfantry = HasKindOfFlag(content, "INFANTRY");
-                    if (!isInfantry) continue;
-
-                    // Aggregate modules and their fields
-                    foreach (var item in content.EnumerateArray())
-                    {
-                        if (item.ValueKind != JsonValueKind.Object) continue;
-                        if (item.TryGetProperty("Key", out _)) continue; // property, not a block
-                        if (!item.TryGetProperty("Type", out var subTypeProp)) continue;
-                        var moduleType = subTypeProp.GetString() ?? string.Empty;
-                        if (string.IsNullOrEmpty(moduleType)) continue;
-
-                        if (!item.TryGetProperty("Content", out var subContent) || subContent.ValueKind != JsonValueKind.Array)
-                        {
-                            continue;
-                        }
-
-                        var agg = moduleMap.GetValueOrDefault(moduleType) ?? new ModuleAggregate(moduleType);
-                        // detect variant name if present (e.g., Behavior = <Variant> ModuleTag_...)
-                        if (item.TryGetProperty("Name", out var nameArr) && nameArr.ValueKind == JsonValueKind.Array)
-                        {
-                            var variant = nameArr.EnumerateArray().FirstOrDefault().GetString();
-                            if (!string.IsNullOrWhiteSpace(variant)) agg.Variants.Add(variant);
-                        }
-
-                        AggregateFieldsRecursive(agg, subContent);
-                        moduleMap[moduleType] = agg;
-                    }
-                }
-            }
-            catch
-            {
-                // ignore malformed files
-            }
-        }
-
-        // Convert aggregates to a simple schema structure
-        var modulesOut = (Dictionary<string, object?>) schema["modules"]!;
-        foreach (var (moduleName, agg) in moduleMap)
-        {
-            var moduleObj = new Dictionary<string, object?>();
-            if (agg.Fields.Count > 0)
-            {
-                moduleObj["fields"] = agg.Fields.OrderBy(s => s, StringComparer.OrdinalIgnoreCase).ToArray();
-            }
-
-            if (agg.SubBlocks.Count > 0)
-            {
-                var blocks = new Dictionary<string, object?>();
-                foreach (var (blockName, keys) in agg.SubBlocks)
-                {
-                    blocks[blockName] = new Dictionary<string, object?>
-                    {
-                        ["fields"] = keys.OrderBy(s => s, StringComparer.OrdinalIgnoreCase).ToArray()
-                    };
-                }
-
-                moduleObj["blocks"] = blocks;
-            }
-
-            if (agg.Variants.Count > 0)
-            {
-                moduleObj["variants"] = agg.Variants.OrderBy(s => s, StringComparer.OrdinalIgnoreCase).ToArray();
-            }
-
-            modulesOut[moduleName] = moduleObj;
-        }
-
-        var outDir = Path.GetDirectoryName(outputSchemaPath);
-        if (!string.IsNullOrEmpty(outDir) && !Directory.Exists(outDir)) Directory.CreateDirectory(outDir);
-        File.WriteAllText(outputSchemaPath, JsonSerializer.Serialize(schema, _jsonOptions));
-    }
-
-    private static bool HasKindOfFlag(JsonElement content, string flag)
-    {
-        foreach (var prop in content.EnumerateArray())
-        {
-            if (prop.ValueKind != JsonValueKind.Object) continue;
-            if (!prop.TryGetProperty("Key", out var keyProp)) continue;
-            if (!keyProp.ValueEquals("KindOf")) continue;
-            if (!prop.TryGetProperty("Value", out var valArr) || valArr.ValueKind != JsonValueKind.Array) continue;
-            foreach (var v in valArr.EnumerateArray())
-            {
-                if (v.ValueKind == JsonValueKind.String && string.Equals(v.GetString(), flag, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private static string[] CollectTopLevelNames(string projectDataDir, string topLevelType)
+    public string[] CollectTopLevelNames(string projectDataDir, string topLevelType)
     {
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var jsonPath in Directory.EnumerateFiles(projectDataDir, "*.json", SearchOption.AllDirectories))
@@ -290,39 +172,6 @@ public partial class DataService : IDataService
         }
 
         return names.OrderBy(s => s, StringComparer.OrdinalIgnoreCase).ToArray();
-    }
-
-    private static void AggregateFieldsRecursive(ModuleAggregate agg, JsonElement content)
-    {
-        foreach (var item in content.EnumerateArray())
-        {
-            if (item.ValueKind != JsonValueKind.Object) continue;
-            if (item.TryGetProperty("Key", out var keyProp))
-            {
-                var key = keyProp.GetString();
-                if (!string.IsNullOrWhiteSpace(key)) agg.Fields.Add(key);
-                continue;
-            }
-
-            if (!item.TryGetProperty("Type", out var typeProp)) continue;
-            var blockName = typeProp.GetString() ?? string.Empty;
-            if (string.IsNullOrEmpty(blockName)) continue;
-            if (!item.TryGetProperty("Content", out var subContent) || subContent.ValueKind != JsonValueKind.Array) continue;
-
-            // Treat nested blocks (e.g., DefaultConditionState, ConditionState) as sub-blocks under parent module
-            var keys = agg.SubBlocks.GetValueOrDefault(blockName) ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var subItem in subContent.EnumerateArray())
-            {
-                if (subItem.ValueKind != JsonValueKind.Object) continue;
-                if (subItem.TryGetProperty("Key", out var subKeyProp))
-                {
-                    var k = subKeyProp.GetString();
-                    if (!string.IsNullOrWhiteSpace(k)) keys.Add(k);
-                }
-            }
-
-            agg.SubBlocks[blockName] = keys;
-        }
     }
 
     #endregion

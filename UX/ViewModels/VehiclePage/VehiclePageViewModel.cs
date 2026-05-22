@@ -1,12 +1,12 @@
 ﻿using System.Text.Json;
 using GeneralsZeroHourEditor.Command;
 using GeneralsZeroHourEditor.Models;
-using GeneralsZeroHourEditor.Services.LocationService;
 using GeneralsZeroHourEditor.Services.GameRegistryService;
+using GeneralsZeroHourEditor.Services.LocationService;
 
-namespace GeneralsZeroHourEditor.UX.ViewModels.InfantryPage;
+namespace GeneralsZeroHourEditor.UX.ViewModels.VehiclePage;
 
-public class InfantryPageViewModel(ILocationService locationService, IGameRegistryService gameRegistryService) : BaseViewModel
+public class VehiclePageViewModel(ILocationService locationService, IGameRegistryService gameRegistryService) : BaseViewModel
 {
     public GameObjectPageModel Model { get; } = new();
 
@@ -23,7 +23,7 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
     protected override async Task LoadedAction()
     {
         LoadSchema();
-        LoadInfantryList();
+        LoadVehicleList();
         await Task.CompletedTask;
     }
 
@@ -53,6 +53,7 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
                     foreach (var f in subDef.Fields) sub.Fields.Add(f);
                     moduleModel.SubBlocks.Add(sub);
                 }
+
                 Model.Modules.Add(moduleModel);
             }
         }
@@ -62,7 +63,7 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
         }
     }
 
-    private void LoadInfantryList()
+    private void LoadVehicleList()
     {
         Model.GameObjectGroups.Clear();
         var projectDataDir = Path.Combine(locationService.ProjectDirectory!, "Data");
@@ -82,7 +83,7 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
                     if (element.ValueKind != JsonValueKind.Object) continue;
                     if (!element.TryGetProperty("Type", out var typeProp) || typeProp.GetString() != "Object") continue;
                     if (!element.TryGetProperty("Content", out var content) || content.ValueKind != JsonValueKind.Array) continue;
-                    if (!HasKindOf(content, "INFANTRY")) continue;
+                    if (!HasKindOf(content, "VEHICLE")) continue;
 
                     var name = GetName(element);
                     if (string.IsNullOrWhiteSpace(name)) continue;

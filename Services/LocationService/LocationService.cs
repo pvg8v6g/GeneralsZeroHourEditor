@@ -59,7 +59,7 @@ public class LocationService : ILocationService
         if (!File.Exists(configPath))
         {
             File.Create(configPath).Dispose();
-            WriteConfigFile(configPath);
+            WriteDefaultConfigFile(configPath);
         }
 
         try
@@ -69,20 +69,24 @@ public class LocationService : ILocationService
         }
         catch (JsonException)
         {
-            WriteConfigFile(configPath);
+            WriteDefaultConfigFile(configPath);
             var text = File.ReadAllText(configPath);
             return JsonSerializer.Deserialize<GeneralsEditorConfig>(text) ?? throw new NullReferenceException();
         }
     }
 
-    private void WriteConfigFile(string configPath)
+    private void WriteDefaultConfigFile(string configPath)
     {
-        // var folderDialog = new OpenFolderDialog { Multiselect = false };
-        // if (folderDialog.ShowDialog() != true) return;
-        // var folderName = folderDialog.FolderName;
-        // var configSetup = new GeneralsEditorConfig(folderName);
-        // var jsonString = JsonSerializer.Serialize(configSetup, Options);
-        // File.WriteAllText(configPath, jsonString);
+        // Default config: only Location is set to the editor root; game paths remain empty until chosen by user.
+        var config = new GeneralsEditorConfig
+        {
+            Location = GameDirectory!,
+            GeneralsPath = string.Empty,
+            ZeroHourPath = string.Empty,
+            Configured = false
+        };
+        var jsonString = JsonSerializer.Serialize(config, Options);
+        File.WriteAllText(configPath, jsonString);
     }
 
     public bool CreateProjectDirectory()
@@ -104,4 +108,12 @@ public class LocationService : ILocationService
     }
 
     #endregion
+
+    public void SaveConfig(GeneralsEditorConfig config)
+    {
+        CreateEditorDirectory();
+        var configPath = $"{GameDirectory}config.json";
+        var json = JsonSerializer.Serialize(config, Options);
+        File.WriteAllText(configPath, json);
+    }
 }

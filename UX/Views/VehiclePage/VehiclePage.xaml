@@ -1,4 +1,4 @@
-﻿<Page x:Class="GeneralsZeroHourEditor.UX.Views.InfantryPage.InfantryPage"
+﻿<Page x:Class="GeneralsZeroHourEditor.UX.Views.VehiclePage.VehiclePage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -13,7 +13,7 @@
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
 
-    <!-- Left: Infantry list -->
+    <!-- Left: Vehicle list -->
     <Border Grid.Column="0"
             Background="{StaticResource SecondaryBrush}"
             Padding="8"
@@ -24,7 +24,7 @@
           <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="0"
-                   Text="Infantry"
+                   Text="Vehicle"
                    FontWeight="Bold"
                    Foreground="{StaticResource WhiteBrush}" />
         <TreeView Grid.Row="1"

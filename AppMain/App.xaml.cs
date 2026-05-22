@@ -1,5 +1,6 @@
 using GeneralsZeroHourEditor.Services.DataService;
 using GeneralsZeroHourEditor.Services.GameDataService;
+using GeneralsZeroHourEditor.Services.GameRegistryService;
 using GeneralsZeroHourEditor.Services.GraphicsService;
 using GeneralsZeroHourEditor.Services.JsonService;
 using GeneralsZeroHourEditor.Services.LocationService;
@@ -8,11 +9,15 @@ using GeneralsZeroHourEditor.Tasks;
 using GeneralsZeroHourEditor.UX.ViewModels.HomePage;
 using GeneralsZeroHourEditor.UX.ViewModels.InfantryPage;
 using GeneralsZeroHourEditor.UX.ViewModels.TopBar;
+using GeneralsZeroHourEditor.UX.ViewModels.VehiclePage;
 using GeneralsZeroHourEditor.UX.Views.HomePage;
 using GeneralsZeroHourEditor.UX.Views.InfantryPage;
 using GeneralsZeroHourEditor.UX.Views.MainPage;
+using GeneralsZeroHourEditor.UX.Views.VehiclePage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using GeneralsZeroHourEditor.Services.BigArchiveService;
+using GeneralsZeroHourEditor.Services.FolderPickerService;
 
 namespace GeneralsZeroHourEditor.AppMain;
 
@@ -38,16 +43,7 @@ public partial class App
         services.AddSingleton<HomePageViewModel>();
         services.AddSingleton<TopBarViewModel>();
         services.AddSingleton<InfantryPageViewModel>();
-        // services.AddSingleton<TopBarViewModel>();
-        // services.AddSingleton<HomeViewViewModel>();
-        // services.AddSingleton<ActorsPageViewModel>();
-        // services.AddSingleton<AttributesPageViewModel>();
-        // services.AddSingleton<ElementsPageViewModel>();
-        // services.AddSingleton<GrowthsPageViewModel>();
-        // services.AddSingleton<DisciplinesPageViewModel>();
-        // services.AddSingleton<EquipmentPageViewModel>();
-        // services.AddSingleton<StatesPageViewModel>();
-        // services.AddSingleton<AnimationsPageViewModel>();
+        services.AddSingleton<VehiclePageViewModel>();
 
         #endregion
 
@@ -56,17 +52,7 @@ public partial class App
         services.AddSingleton<MainPage>();
         services.AddSingleton<HomePage>();
         services.AddSingleton<InfantryPage>();
-        // services.AddSingleton<MainWindow>();
-        // services.AddSingleton<HomeView>();
-        // services.AddSingleton<TopBar>();
-        // services.AddSingleton<ActorsPage>();
-        // services.AddSingleton<AttributesPage>();
-        // services.AddSingleton<ElementsPage>();
-        // services.AddSingleton<GrowthsPage>();
-        // services.AddSingleton<DisciplinesPage>();
-        // services.AddSingleton<EquipmentPage>();
-        // services.AddSingleton<StatesPage>();
-        // services.AddSingleton<AnimationsPage>();
+        services.AddSingleton<VehiclePage>();
 
         #endregion
 
@@ -85,8 +71,11 @@ public partial class App
         services.AddSingleton<ILocationService, LocationService>();
         services.AddSingleton<IGraphicsService, GraphicsService>();
         services.AddSingleton<IGameDataService, GameDataService>();
+        services.AddSingleton<IGameRegistryService, GameRegistryService>();
         services.AddSingleton<IDataService, DataService>();
         services.AddSingleton<IJsonService, JsonService>();
+        services.AddSingleton<IBigArchiveService, BigArchiveService>();
+        services.AddSingleton<IFolderPickerService>(sp => new FolderPickerService(sp.GetRequiredService<MainPage>()));
 
         #endregion
 

@@ -17,4 +17,6 @@ public interface ILocationService
     bool CreateProjectDirectory();
 
     bool CreateDataDirectory();
+
+    void SaveConfig(GeneralsEditorConfig config);
 }

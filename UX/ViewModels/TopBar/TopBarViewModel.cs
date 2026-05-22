@@ -132,7 +132,8 @@ public class TopBarViewModel(INavigationService navigationService, IGraphicsServ
             case "0": // infantry
                 navigationService.NavigateTo<Views.InfantryPage.InfantryPage>();
                 break;
-            case "1":
+            case "1": // vehicle
+                navigationService.NavigateTo<Views.VehiclePage.VehiclePage>();
                 break;
             case "2":
                 break;
