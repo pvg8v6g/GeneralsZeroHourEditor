@@ -5,6 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:behaviors="using:GeneralsZeroHourEditor.Behaviors"
       xmlns:models="using:GeneralsZeroHourEditor.Models"
+      xmlns:enginePanel="using:GeneralsZeroHourEditor.UX.Components.EnginePanel"
       mc:Ignorable="d"
       behaviors:LoadedBehavior.LoadedCommand="{x:Bind ViewModel.LoadedCommand}">
   <Grid ColumnSpacing="10" Padding="5">
@@ -42,6 +43,89 @@
     </Border>
 
     <ScrollViewer Grid.Column="1"
-                  VerticalScrollBarVisibility="Auto" />
+                  VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="10" Background="Blue">
+        <!-- 1) Object metadata -->
+        <enginePanel:EnginePanel Title="Object Metadata"
+                                 Visibility="{x:Bind ViewModel.Model.SelectedNode, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
+          <StackPanel Spacing="6">
+            <TextBlock
+              Text="Name / Side / KindOf / EditorSorting / BuildCost / BuildTime / BuildCompletion / Prerequisites / CommandSet / UI Art / Progression" />
+          </StackPanel>
+        </enginePanel:EnginePanel>
+
+        <!-- 2) Visuals (W3D) -->
+        <enginePanel:EnginePanel Title="Visuals (W3D)"
+                                 Visibility="{x:Bind ViewModel.Model.SelectedNode, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
+          <StackPanel Spacing="6">
+            <TextBlock Text="Draw entries, ConditionStates, TransitionStates, Model/Animations, Weapon bones &amp; FX hooks" />
+          </StackPanel>
+        </enginePanel:EnginePanel>
+
+        <!-- 3) Armor & Health -->
+        <enginePanel:EnginePanel Title="Armor &amp; Health"
+                                 Visibility="{x:Bind ViewModel.Model.SelectedNode, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
+          <StackPanel Spacing="6">
+            <TextBlock Text="Body (Max/Initial Health), ArmorSets with Conditions, Resistances, Death FX" />
+          </StackPanel>
+        </enginePanel:EnginePanel>
+
+        <!-- 4) Weapons -->
+        <enginePanel:EnginePanel Title="Weapons"
+                                 Visibility="{x:Bind ViewModel.Model.SelectedNode, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
+          <StackPanel Spacing="6">
+            <TextBlock Text="WeaponSets with Conditions, targeting and switching options" />
+          </StackPanel>
+        </enginePanel:EnginePanel>
+
+        <!-- 5) Behaviors / Modules -->
+        <enginePanel:EnginePanel Title="Behaviors / Modules"
+                                 Visibility="{x:Bind ViewModel.Model.SelectedNode, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
+          <StackPanel Spacing="6">
+            <TextBlock Text="Add/remove behavior modules (AI, Upgrades, Special Powers, Status, Transport, etc.)" />
+          </StackPanel>
+        </enginePanel:EnginePanel>
+
+        <!-- 6) Movement -->
+        <enginePanel:EnginePanel Title="Movement"
+                                 Visibility="{x:Bind ViewModel.Model.SelectedNode, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
+          <StackPanel Spacing="6">
+            <TextBlock Text="Locomotor selection, Speed/Acceleration/TurnRate, MovementZone" />
+          </StackPanel>
+        </enginePanel:EnginePanel>
+
+        <!-- 7) Vision & Shroud -->
+        <enginePanel:EnginePanel Title="Vision &amp; Shroud"
+                                 Visibility="{x:Bind ViewModel.Model.SelectedNode, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
+          <StackPanel Spacing="6">
+            <TextBlock Text="VisionRange, ShroudClearingRange, Detection (if applicable)" />
+          </StackPanel>
+        </enginePanel:EnginePanel>
+
+        <!-- 8) Geometry & Shadow -->
+        <enginePanel:EnginePanel Title="Geometry &amp; Shadow"
+                                 Visibility="{x:Bind ViewModel.Model.SelectedNode, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
+          <StackPanel Spacing="6">
+            <TextBlock Text="Geometry (shape/radii/height/small), Shadow (type/size/texture)" />
+          </StackPanel>
+        </enginePanel:EnginePanel>
+
+        <!-- 9) Audio & FX -->
+        <enginePanel:EnginePanel Title="Audio &amp; FX"
+                                 Visibility="{x:Bind ViewModel.Model.SelectedNode, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
+          <StackPanel Spacing="6">
+            <TextBlock Text="Voices, Ambient/Foley, Unit/Weapon/Death FX hooks" />
+          </StackPanel>
+        </enginePanel:EnginePanel>
+
+        <!-- 10) Flags & Classification -->
+        <enginePanel:EnginePanel Title="Flags &amp; Classification"
+                                 Visibility="{x:Bind ViewModel.Model.SelectedNode, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
+          <StackPanel Spacing="6">
+            <TextBlock Text="KindOf flags and editor-only tags" />
+          </StackPanel>
+        </enginePanel:EnginePanel>
+      </StackPanel>
+    </ScrollViewer>
   </Grid>
 </Page>
