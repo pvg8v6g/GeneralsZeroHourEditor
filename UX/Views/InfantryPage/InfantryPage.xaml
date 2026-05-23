@@ -8,7 +8,6 @@
       xmlns:models="using:GeneralsZeroHourEditor.Models"
       xmlns:enginePanel="using:GeneralsZeroHourEditor.UX.Components.EnginePanel"
       xmlns:engineTextBox="using:GeneralsZeroHourEditor.UX.Components.EngineTextBox"
-      xmlns:engineButtonIcon="using:GeneralsZeroHourEditor.UX.Components.EngineButtonIcon"
       mc:Ignorable="d"
       behaviors:LoadedBehavior.LoadedCommand="{x:Bind ViewModel.LoadedCommand}">
   <Grid ColumnSpacing="10" Padding="5">
@@ -69,41 +68,50 @@
 
             <!-- Identity & UI Art -->
             <engineTextBox:EngineTextBox Grid.Column="0"
+                                         Grid.Row="0"
                                          Header="Name"
                                          Text="{x:Bind ViewModel.Model.Detail.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
             <engineTextBox:EngineTextBox Grid.Column="1"
+                                         Grid.Row="0"
                                          Header="Side"
                                          Text="{x:Bind ViewModel.Model.Detail.Side, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <engineTextBox:EngineTextBox Grid.Column="0" Grid.Row="1"
+            <engineTextBox:EngineTextBox Grid.Column="0"
+                                         Grid.Row="1"
                                          Header="EditorSorting"
                                          Text="{x:Bind ViewModel.Model.Detail.EditorSorting, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <engineTextBox:EngineTextBox Grid.Column="1" Grid.Row="1"
+            <engineTextBox:EngineTextBox Grid.Column="1"
+                                         Grid.Row="1"
                                          Header="CommandSet"
                                          Text="{x:Bind ViewModel.Model.Detail.CommandSet, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <engineTextBox:EngineTextBox Grid.Column="0" Grid.Row="2"
+            <engineTextBox:EngineTextBox Grid.Column="0"
+                                         Grid.Row="2"
                                          Header="SelectPortrait"
                                          Text="{x:Bind ViewModel.Model.Detail.SelectPortrait, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <engineTextBox:EngineTextBox Grid.Column="1" Grid.Row="2"
+            <engineTextBox:EngineTextBox Grid.Column="1"
+                                         Grid.Row="2"
                                          Header="ButtonImage"
                                          Text="{x:Bind ViewModel.Model.Detail.ButtonImage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
             <!-- Production -->
-            <engineTextBox:EngineTextBox Grid.Column="0" Grid.Row="3"
+            <engineTextBox:EngineTextBox Grid.Column="0"
+                                         Grid.Row="3"
                                          Header="BuildCost"
                                          InputType="Integer"
                                          Text="{x:Bind ViewModel.Model.Detail.BuildCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <engineTextBox:EngineTextBox Grid.Column="1" Grid.Row="3"
+            <engineTextBox:EngineTextBox Grid.Column="1"
+                                         Grid.Row="3"
                                          Header="BuildTime"
                                          InputType="Integer"
                                          Text="{x:Bind ViewModel.Model.Detail.BuildTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <engineTextBox:EngineTextBox Grid.Column="0" Grid.Row="4"
+            <engineTextBox:EngineTextBox Grid.Column="0"
+                                         Grid.Row="4"
                                          Header="BuildCompletion"
                                          Text="{x:Bind ViewModel.Model.Detail.BuildCompletion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -174,7 +182,7 @@
             <!-- Upgrade Cameos (read-only list for now) -->
             <StackPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="6" Spacing="4">
               <TextBlock Text="Upgrade Cameos" FontWeight="SemiBold" />
-              <ListView ItemsSource="{x:Bind ViewModel.Model.Detail.UpgradeCameos, Mode=OneWay}"/>
+              <ListView ItemsSource="{x:Bind ViewModel.Model.Detail.UpgradeCameos, Mode=OneWay}" />
             </StackPanel>
           </Grid>
         </enginePanel:EnginePanel>
@@ -255,38 +263,47 @@
             </Grid.ColumnDefinitions>
 
             <engineTextBox:EngineTextBox Grid.Column="0"
+                                         Grid.Row="0"
                                          Header="Geometry"
                                          Text="{x:Bind ViewModel.Model.Detail.Geometry, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <engineTextBox:EngineTextBox Grid.Column="1"
+                                         Grid.Row="0"
                                          Header="GeometryIsSmall"
                                          Text="{x:Bind ViewModel.Model.Detail.GeometryIsSmall, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <engineTextBox:EngineTextBox Grid.Column="0" Grid.Row="1"
+            <engineTextBox:EngineTextBox Grid.Column="0"
+                                         Grid.Row="1"
                                          Header="GeometryMajorRadius"
                                          InputType="Double"
                                          Text="{x:Bind ViewModel.Model.Detail.GeometryMajorRadius, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            <engineTextBox:EngineTextBox Grid.Column="1" Grid.Row="1"
+            <engineTextBox:EngineTextBox Grid.Column="1"
+                                         Grid.Row="1"
                                          Header="GeometryMinorRadius"
                                          InputType="Double"
                                          Text="{x:Bind ViewModel.Model.Detail.GeometryMinorRadius, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <engineTextBox:EngineTextBox Grid.Column="0" Grid.Row="2"
+            <engineTextBox:EngineTextBox Grid.Column="0"
+                                         Grid.Row="2"
                                          Header="GeometryHeight"
                                          InputType="Double"
                                          Text="{x:Bind ViewModel.Model.Detail.GeometryHeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <engineTextBox:EngineTextBox Grid.Column="0" Grid.Row="3"
+            <engineTextBox:EngineTextBox Grid.Column="0"
+                                         Grid.Row="3"
                                          Header="Shadow"
                                          Text="{x:Bind ViewModel.Model.Detail.Shadow, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            <engineTextBox:EngineTextBox Grid.Column="1" Grid.Row="3"
+            <engineTextBox:EngineTextBox Grid.Column="1"
+                                         Grid.Row="3"
                                          Header="ShadowTexture"
                                          Text="{x:Bind ViewModel.Model.Detail.ShadowTexture, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <engineTextBox:EngineTextBox Grid.Column="0" Grid.Row="4"
+            <engineTextBox:EngineTextBox Grid.Column="0"
+                                         Grid.Row="4"
                                          Header="ShadowSizeX"
                                          InputType="Integer"
                                          Text="{x:Bind ViewModel.Model.Detail.ShadowSizeX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            <engineTextBox:EngineTextBox Grid.Column="1" Grid.Row="4"
+            <engineTextBox:EngineTextBox Grid.Column="1"
+                                         Grid.Row="4"
                                          Header="ShadowSizeY"
                                          InputType="Integer"
                                          Text="{x:Bind ViewModel.Model.Detail.ShadowSizeY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
