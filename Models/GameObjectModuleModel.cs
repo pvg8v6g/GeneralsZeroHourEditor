@@ -60,4 +60,10 @@ public class GameObjectPageModel : BaseModel
     public GameObjectItemModel? SelectedGameObject => SelectedNode as GameObjectItemModel;
 
     public ObservableCollection<GameObjectModuleModel> Modules { get; } = new();
+
+    public GameObjectDetailModel? Detail
+    {
+        get;
+        set => SetField(ref field, value);
+    }
 }
