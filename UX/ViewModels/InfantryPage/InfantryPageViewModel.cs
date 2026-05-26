@@ -44,6 +44,7 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
 
     public RelayCommand<LocomotorSetModel> RemoveLocomotorCommand => new(RemoveLocomotorSet);
 
+
     private void OnItemInvoked(object? invokedItem)
     {
         if (invokedItem is not GameObjectItemModel item) return;
@@ -651,7 +652,6 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
 
     private void RemoveLocomotorSet(LocomotorSetModel? set)
     {
-        Console.WriteLine("hello world");
         if (set is null) return;
         Model.Detail?.LocomotorSets.Remove(set);
     }

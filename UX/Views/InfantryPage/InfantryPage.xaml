@@ -230,29 +230,41 @@
               </Grid>
 
               <ListView x:Name="ArmorSetsList"
+                        Tag="{x:Bind ViewModel, Mode=OneWay}"
                         ItemsSource="{x:Bind ViewModel.Model.Detail.ArmorSets, Mode=OneWay}">
                 <ListView.ItemTemplate>
                   <DataTemplate x:DataType="models:ArmorSetModel">
-                    <Grid ColumnSpacing="8">
+                    <Grid ColumnSpacing="8"
+                          Padding="0 8 0 10">
                       <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                       </Grid.ColumnDefinitions>
 
+                      <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                      </Grid.RowDefinitions>
+
                       <ComboBox Grid.Column="0"
                                 Header="Armor"
-                                ItemsSource="{Binding ElementName=ArmorSetsList, Path=DataContext.Model.Detail.AvailableArmorTemplates}"
+                                ItemsSource="{Binding ElementName=ArmorSetsList, Path=Tag.Model.Detail.AvailableArmorTemplates}"
                                 SelectedItem="{x:Bind Armor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                      <engineTextBox:EngineTextBox Grid.Column="1"
+                      <engineTextBox:EngineTextBox Grid.Column="0"
+                                                   Grid.Row="1"
                                                    Header="Conditions (csv)"
                                                    Text="{x:Bind ConditionsCsv, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                      <Button Grid.Column="2"
-                              Content="Remove"
-                              Command="{Binding ElementName=PageRoot, Path=ViewModel.RemoveArmorSetCommand}"
-                              CommandParameter="{Binding}" />
+                      <Button Grid.Column="1"
+                              Grid.Row="0"
+                              Grid.RowSpan="2" ToolTipService.ToolTip="Remove"
+                              AutomationProperties.Name="Remove"
+                              Command="{Binding ElementName=ArmorSetsList, Path=Tag.RemoveArmorSetCommand}"
+                              CommandParameter="{Binding}"
+                              Background="{StaticResource RedBrush}">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
+                      </Button>
                     </Grid>
                   </DataTemplate>
                 </ListView.ItemTemplate>
@@ -277,10 +289,13 @@
             </Grid>
 
             <ListView x:Name="WeaponSetsList"
+                      Tag="{x:Bind ViewModel, Mode=OneWay}"
                       ItemsSource="{x:Bind ViewModel.Model.Detail.WeaponSets, Mode=OneWay}">
               <ListView.ItemTemplate>
                 <DataTemplate x:DataType="models:WeaponSetModel">
-                  <Grid ColumnSpacing="8" RowSpacing="6">
+                  <Grid ColumnSpacing="8"
+                        RowSpacing="6"
+                        Padding="0 8 0 10">
                     <Grid.RowDefinitions>
                       <RowDefinition Height="Auto" />
                       <RowDefinition Height="Auto" />
@@ -292,29 +307,39 @@
                       <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <ComboBox Grid.Row="0" Grid.Column="0"
+                    <ComboBox Grid.Row="0"
+                              Grid.Column="0"
                               Header="Primary"
-                              ItemsSource="{Binding ElementName=WeaponSetsList, Path=DataContext.Model.Detail.AvailableWeaponTemplates}"
+                              ItemsSource="{Binding ElementName=WeaponSetsList, Path=Tag.Model.Detail.AvailableWeaponTemplates}"
                               SelectedItem="{x:Bind Primary, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                    <ComboBox Grid.Row="0" Grid.Column="1"
+                    <ComboBox Grid.Row="0"
+                              Grid.Column="1"
                               Header="Secondary"
-                              ItemsSource="{Binding ElementName=WeaponSetsList, Path=DataContext.Model.Detail.AvailableWeaponTemplates}"
+                              ItemsSource="{Binding ElementName=WeaponSetsList, Path=Tag.Model.Detail.AvailableWeaponTemplates}"
                               SelectedItem="{x:Bind Secondary, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                    <ComboBox Grid.Row="0" Grid.Column="2"
+                    <ComboBox Grid.Row="0"
+                              Grid.Column="2"
                               Header="Tertiary"
-                              ItemsSource="{Binding ElementName=WeaponSetsList, Path=DataContext.Model.Detail.AvailableWeaponTemplates}"
+                              ItemsSource="{Binding ElementName=WeaponSetsList, Path=Tag.Model.Detail.AvailableWeaponTemplates}"
                               SelectedItem="{x:Bind Tertiary, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                    <Button Grid.Row="0" Grid.Column="3"
-                            Content="Remove"
-                            Command="{Binding ElementName=PageRoot, Path=ViewModel.RemoveWeaponSetCommand}"
-                            CommandParameter="{Binding}" />
-
-                    <engineTextBox:EngineTextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4"
+                    <engineTextBox:EngineTextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
                                                  Header="Conditions (csv)"
                                                  Text="{x:Bind ConditionsCsv, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <Button Grid.Column="3"
+                            Grid.Row="0"
+                            Grid.RowSpan="2"
+                            ToolTipService.ToolTip="Remove"
+                            AutomationProperties.Name="Remove"
+                            Command="{Binding ElementName=WeaponSetsList, Path=Tag.RemoveWeaponSetCommand}"
+                            CommandParameter="{Binding}"
+                            Background="{StaticResource RedBrush}">
+                      <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
+                    </Button>
+
                   </Grid>
                 </DataTemplate>
               </ListView.ItemTemplate>
@@ -347,29 +372,42 @@
             </Grid>
 
             <ListView x:Name="LocomotorList"
+                      Tag="{x:Bind ViewModel, Mode=OneWay}"
                       ItemsSource="{x:Bind ViewModel.Model.Detail.LocomotorSets, Mode=OneWay}">
               <ListView.ItemTemplate>
                 <DataTemplate x:DataType="models:LocomotorSetModel">
-                  <Grid ColumnSpacing="8">
+                  <Grid ColumnSpacing="8"
+                        RowSpacing="6"
+                        Padding="0 8 0 10">
                     <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="*" />
                       <ColumnDefinition Width="*" />
                       <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="Auto" />
+                      <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
                     <ComboBox Grid.Column="0"
                               Header="Locomotors"
-                              ItemsSource="{Binding ElementName=LocomotorList, Path=DataContext.Model.Detail.AvailableLocomotors}"
+                              ItemsSource="{Binding ElementName=LocomotorList, Path=Tag.Model.Detail.AvailableLocomotors}"
                               SelectedItem="{x:Bind Locomotor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                    <engineTextBox:EngineTextBox Grid.Column="1"
+                    <engineTextBox:EngineTextBox Grid.Column="0"
+                                                 Grid.Row="1"
                                                  Header="Conditions (csv)"
                                                  Text="{x:Bind ConditionsCsv, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                    <Button Grid.Column="2"
-                            Content="Remove"
-                            Command="{Binding ElementName=PageRoot, Path=ViewModel.RemoveLocomotorCommand}"
-                            CommandParameter="{Binding}" />
+                    <Button Grid.Column="1"
+                            Grid.Row="0"
+                            Grid.RowSpan="2"
+                            ToolTipService.ToolTip="Remove"
+                            AutomationProperties.Name="Remove"
+                            Command="{Binding ElementName=LocomotorList, Path=Tag.RemoveLocomotorCommand}"
+                            CommandParameter="{Binding}"
+                            Background="{StaticResource RedBrush}">
+                      <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
+                    </Button>
                   </Grid>
                 </DataTemplate>
               </ListView.ItemTemplate>
