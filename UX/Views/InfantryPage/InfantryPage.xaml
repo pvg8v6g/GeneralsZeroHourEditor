@@ -45,7 +45,8 @@
     </Border>
 
     <ScrollViewer Grid.Column="1"
-                  VerticalScrollBarVisibility="Auto">
+                  VerticalScrollBarVisibility="Auto"
+                  Padding="0 0 18 0">
       <StackPanel Spacing="10">
         <!-- 1) Object metadata -->
         <enginePanel:EnginePanel Title="Object Metadata"
@@ -332,39 +333,48 @@
         <!-- 6) Movement -->
         <enginePanel:EnginePanel Title="Movement"
                                  Visibility="{x:Bind ViewModel.Model.SelectedNode, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
-          <Grid RowSpacing="10" ColumnSpacing="12">
-            <Grid.RowDefinitions>
-              <RowDefinition Height="Auto" />
-              <RowDefinition Height="Auto" />
-              <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+          <!-- Locomotors -->
+          <StackPanel Spacing="6">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="Locomotor Sets" FontWeight="SemiBold" />
+              <Button Grid.Column="1"
+                      Content="Add Set"
+                      Command="{x:Bind ViewModel.AddLocomotorCommand}" />
+            </Grid>
 
-            <ComboBox Grid.Row="0" Grid.Column="0"
-                      Header="Locomotor"
-                      ItemsSource="{x:Bind ViewModel.Model.Detail.AvailableLocomotors, Mode=OneWay}"
-                      SelectedItem="{x:Bind ViewModel.Model.Detail.Locomotor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            <engineTextBox:EngineTextBox Grid.Row="0" Grid.Column="1"
-                                         Header="MovementZone"
-                                         Text="{x:Bind ViewModel.Model.Detail.MovementZone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <ListView x:Name="LocomotorList"
+                      ItemsSource="{x:Bind ViewModel.Model.Detail.LocomotorSets, Mode=OneWay}">
+              <ListView.ItemTemplate>
+                <DataTemplate x:DataType="models:LocomotorSetModel">
+                  <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-            <engineTextBox:EngineTextBox Grid.Row="1" Grid.Column="0"
-                                         Header="Speed"
-                                         InputType="Double"
-                                         Text="{x:Bind ViewModel.Model.Detail.Speed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            <engineTextBox:EngineTextBox Grid.Row="1" Grid.Column="1"
-                                         Header="Acceleration"
-                                         InputType="Double"
-                                         Text="{x:Bind ViewModel.Model.Detail.Acceleration, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <ComboBox Grid.Column="0"
+                              Header="Locomotors"
+                              ItemsSource="{Binding ElementName=LocomotorList, Path=DataContext.Model.Detail.AvailableLocomotors}"
+                              SelectedItem="{x:Bind Locomotor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <engineTextBox:EngineTextBox Grid.Row="2" Grid.Column="0"
-                                         Header="TurnRate"
-                                         InputType="Double"
-                                         Text="{x:Bind ViewModel.Model.Detail.TurnRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-          </Grid>
+                    <engineTextBox:EngineTextBox Grid.Column="1"
+                                                 Header="Conditions (csv)"
+                                                 Text="{x:Bind ConditionsCsv, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <Button Grid.Column="2"
+                            Content="Remove"
+                            Command="{Binding ElementName=PageRoot, Path=ViewModel.RemoveLocomotorCommand}"
+                            CommandParameter="{Binding}" />
+                  </Grid>
+                </DataTemplate>
+              </ListView.ItemTemplate>
+            </ListView>
+          </StackPanel>
         </enginePanel:EnginePanel>
 
         <!-- 7) Vision & Shroud -->

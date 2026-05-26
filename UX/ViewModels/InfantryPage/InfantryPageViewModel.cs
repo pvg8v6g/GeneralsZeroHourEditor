@@ -40,13 +40,15 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
 
     public RelayCommand<WeaponSetModel> RemoveWeaponSetCommand => new(RemoveWeaponSet);
 
+    public RelayCommand AddLocomotorCommand => new(AddLocomotorSet);
+
+    public RelayCommand<LocomotorSetModel> RemoveLocomotorCommand => new(RemoveLocomotorSet);
+
     private void OnItemInvoked(object? invokedItem)
     {
-        if (invokedItem is GameObjectItemModel item)
-        {
-            Model.SelectedNode = item;
-            LoadSelectedDetail(item.Name);
-        }
+        if (invokedItem is not GameObjectItemModel item) return;
+        Model.SelectedNode = item;
+        LoadSelectedDetail(item.Name);
     }
 
     protected override async Task LoadedAction()
@@ -485,25 +487,33 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
                             case "ShadowTexture":
                                 detail.ShadowTexture = FirstString();
                                 break;
-
-                            // Body/ArmorSet/WeaponSet are now handled via block branch above
-
-                            // Movement
                             case "Locomotor":
-                                detail.Locomotor = FirstString();
+                            {
+                                var vals = valueArr.EnumerateArray()
+                                    .Where(v => v.ValueKind == JsonValueKind.String)
+                                    .Select(v => v.GetString() ?? string.Empty)
+                                    .ToArray();
+                                LocomotorSetModel? model = null;
+                                switch (vals.Length)
+                                {
+                                    case 1:
+                                        model = new LocomotorSetModel { Locomotor = vals[0] };
+                                        break;
+                                    case >= 2:
+                                    {
+                                        // Format typically: SET_NORMAL <LocomotorName>
+                                        var maybeCond = vals[0];
+                                        model = maybeCond.StartsWith("SET_", StringComparison.OrdinalIgnoreCase)
+                                            ? new LocomotorSetModel { Locomotor = vals[1], ConditionsCsv = maybeCond }
+                                            : new LocomotorSetModel { Locomotor = vals[0] };
+                                        break;
+                                    }
+                                }
+
+                                if (model is null) break;
+                                detail.LocomotorSets.Add(model);
                                 break;
-                            case "Speed":
-                                detail.Speed = FirstString();
-                                break;
-                            case "Acceleration":
-                                detail.Acceleration = FirstString();
-                                break;
-                            case "TurnRate":
-                                detail.TurnRate = FirstString();
-                                break;
-                            case "MovementZone":
-                                detail.MovementZone = FirstString();
-                                break;
+                            }
                         }
 
                         continue;
@@ -632,5 +642,17 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
     {
         if (set is null) return;
         Model.Detail?.WeaponSets.Remove(set);
+    }
+
+    private void AddLocomotorSet()
+    {
+        Model.Detail?.LocomotorSets.Add(new LocomotorSetModel { Locomotor = string.Empty });
+    }
+
+    private void RemoveLocomotorSet(LocomotorSetModel? set)
+    {
+        Console.WriteLine("hello world");
+        if (set is null) return;
+        Model.Detail?.LocomotorSets.Remove(set);
     }
 }

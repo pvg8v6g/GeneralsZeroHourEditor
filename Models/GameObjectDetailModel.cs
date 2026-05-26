@@ -54,7 +54,7 @@ public class GameObjectDetailModel : BaseModel
         set => SetField(ref field, value);
     }
 
-    public ObservableCollection<string> UpgradeCameos { get; } = new();
+    public ObservableCollection<string> UpgradeCameos { get; } = [];
 
     // Production
     public string BuildCost
@@ -75,10 +75,10 @@ public class GameObjectDetailModel : BaseModel
         set => SetField(ref field, value);
     }
 
-    public ObservableCollection<string> Prerequisites { get; } = new();
+    public ObservableCollection<string> Prerequisites { get; } = [];
 
     // Flags
-    public ObservableCollection<string> KindOf { get; } = new();
+    public ObservableCollection<string> KindOf { get; } = [];
 
     // Vision & Shroud
     public string VisionRange
@@ -161,46 +161,19 @@ public class GameObjectDetailModel : BaseModel
         set => SetField(ref field, value);
     }
 
-    public ObservableCollection<ArmorSetModel> ArmorSets { get; } = new();
+    public ObservableCollection<ArmorSetModel> ArmorSets { get; } = [];
 
     // Weapons
-    public ObservableCollection<WeaponSetModel> WeaponSets { get; } = new();
+    public ObservableCollection<WeaponSetModel> WeaponSets { get; } = [];
 
-    // Movement
-    public string Locomotor
-    {
-        get;
-        set => SetField(ref field, value);
-    }
-
-    public string Speed
-    {
-        get;
-        set => SetField(ref field, value);
-    }
-
-    public string Acceleration
-    {
-        get;
-        set => SetField(ref field, value);
-    }
-
-    public string TurnRate
-    {
-        get;
-        set => SetField(ref field, value);
-    }
-
-    public string MovementZone
-    {
-        get;
-        set => SetField(ref field, value);
-    }
+    public ObservableCollection<LocomotorSetModel> LocomotorSets { get; } = [];
 
     // Available templates (populated from project JSON registries)
-    public ObservableCollection<string> AvailableArmorTemplates { get; } = new();
-    public ObservableCollection<string> AvailableWeaponTemplates { get; } = new();
-    public ObservableCollection<string> AvailableLocomotors { get; } = new();
+    public ObservableCollection<string> AvailableArmorTemplates { get; } = [];
+
+    public ObservableCollection<string> AvailableWeaponTemplates { get; } = [];
+
+    public ObservableCollection<string> AvailableLocomotors { get; } = [];
 
     // Derived / context
     public string? SourceFilePath

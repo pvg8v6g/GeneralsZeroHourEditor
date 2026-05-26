@@ -10,9 +10,9 @@ public class GameObjectModuleModel : BaseModel
         set => SetField(ref field, value);
     }
 
-    public ObservableCollection<string> Fields { get; } = new();
+    public ObservableCollection<string> Fields { get; } = [];
 
-    public ObservableCollection<GameObjectSubBlockModel> SubBlocks { get; } = new();
+    public ObservableCollection<GameObjectSubBlockModel> SubBlocks { get; } = [];
 }
 
 public class GameObjectSubBlockModel : BaseModel
@@ -23,7 +23,7 @@ public class GameObjectSubBlockModel : BaseModel
         set => SetField(ref field, value);
     }
 
-    public ObservableCollection<string> Fields { get; } = new();
+    public ObservableCollection<string> Fields { get; } = [];
 }
 
 public abstract class GameObjectNodeModel : BaseModel
@@ -44,12 +44,12 @@ public class GameObjectItemModel : GameObjectNodeModel
 
 public class SideGroupModel : GameObjectNodeModel
 {
-    public override ObservableCollection<GameObjectItemModel> Children { get; } = new();
+    public override ObservableCollection<GameObjectItemModel> Children { get; } = [];
 }
 
 public class GameObjectPageModel : BaseModel
 {
-    public ObservableCollection<SideGroupModel> GameObjectGroups { get; } = new();
+    public ObservableCollection<SideGroupModel> GameObjectGroups { get; } = [];
 
     public object? SelectedNode
     {
@@ -59,7 +59,7 @@ public class GameObjectPageModel : BaseModel
 
     public GameObjectItemModel? SelectedGameObject => SelectedNode as GameObjectItemModel;
 
-    public ObservableCollection<GameObjectModuleModel> Modules { get; } = new();
+    public ObservableCollection<GameObjectModuleModel> Modules { get; } = [];
 
     public GameObjectDetailModel? Detail
     {

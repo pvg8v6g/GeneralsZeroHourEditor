@@ -37,7 +37,7 @@ public class InitialLoadDataTask(ILocationService locationService, IJsonService 
         }
         else
         {
-            _iniFiles = Array.Empty<string>();
+            _iniFiles = [];
         }
 
         // If no extracted INI files exist, we will calculate workload later from BIG entries.
