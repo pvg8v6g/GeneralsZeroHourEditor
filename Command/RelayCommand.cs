@@ -30,13 +30,13 @@ public partial class RelayCommand<T>(Action<T> execute, Func<T, bool>? canExecut
     public bool CanExecute(object? parameter)
     {
         if (parameter is null) return false;
-        return canExecute == null || canExecute((T)parameter);
+        return canExecute == null || canExecute((T) parameter);
     }
 
     public void Execute(object? parameter)
     {
         if (parameter is null) return;
-        execute((T)parameter);
+        execute((T) parameter);
     }
 
     public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);

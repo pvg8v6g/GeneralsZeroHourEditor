@@ -6,14 +6,21 @@ namespace GeneralsZeroHourEditor.Behaviors;
 
 public class TreeViewBehavior
 {
+    #region Dependency Properties
+
     public static readonly DependencyProperty ItemInvokedCommandProperty = DependencyProperty.RegisterAttached(
-        "ItemInvokedCommand", typeof(ICommand), typeof(TreeViewBehavior), new PropertyMetadata(null, OnItemInvokedCommandChanged));
+        "ItemInvokedCommand",
+        typeof(ICommand),
+        typeof(TreeViewBehavior),
+        new PropertyMetadata(null, OnItemInvokedCommandChanged));
+
+    #endregion
 
     private static void OnItemInvokedCommandChanged(DependencyObject depObj, DependencyPropertyChangedEventArgs e)
     {
         if (depObj is TreeView treeView && e.NewValue is ICommand command)
         {
-            treeView.ItemInvoked += (s, args) =>
+            treeView.ItemInvoked += (_, args) =>
             {
                 if (command.CanExecute(args.InvokedItem))
                 {
@@ -25,7 +32,7 @@ public class TreeViewBehavior
 
     public static ICommand GetItemInvokedCommand(DependencyObject depObj)
     {
-        return (ICommand)depObj.GetValue(ItemInvokedCommandProperty);
+        return (ICommand) depObj.GetValue(ItemInvokedCommandProperty);
     }
 
     public static void SetItemInvokedCommand(DependencyObject depObj, ICommand value)

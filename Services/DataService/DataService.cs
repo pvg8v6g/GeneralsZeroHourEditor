@@ -1,7 +1,7 @@
 ﻿using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using GeneralsZeroHourEditor.Models;
 
 namespace GeneralsZeroHourEditor.Services.DataService;
 
@@ -20,7 +20,7 @@ public partial class DataService : IDataService
         // In case of any accidental reference reuse in the constructed object graph,
         // ignore cycles instead of throwing. Our structure should be a tree, but this
         // keeps serialization robust across all INIs.
-        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
+        ReferenceHandler = ReferenceHandler.IgnoreCycles
     };
 
     private readonly Regex _lineRegex = CompiledLineRegex();
@@ -77,11 +77,6 @@ public partial class DataService : IDataService
         "Voice", "Roads", "Water", "Weather"
     };
 
-    private readonly HashSet<string> _parentBlocksPreventingObject = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Prerequisites", "ArmorSet", "WeaponSet"
-    };
-
     #endregion
 
     #region Public Functions
@@ -112,12 +107,10 @@ public partial class DataService : IDataService
 
         foreach (var rawLine in lines)
         {
-            var lineWithComments = rawLine.Trim();
             // Strip common INI comment styles: ';', '//', and '#'. Use the earliest occurrence.
             var commentStripped = StripComments(rawLine);
             var line = commentStripped.Trim();
             if (string.IsNullOrWhiteSpace(line)) continue;
-
             if (line.Equals("End", StringComparison.OrdinalIgnoreCase))
             {
                 // Always treat a standalone 'End' (after trimming ';' comments) as the end of the current block.
@@ -165,18 +158,14 @@ public partial class DataService : IDataService
                 if (doc.RootElement.ValueKind != JsonValueKind.Array) continue;
                 foreach (var element in doc.RootElement.EnumerateArray())
                 {
-                    if (element.ValueKind != JsonValueKind.Object) continue;
+                    if (element.ValueKind is not JsonValueKind.Object) continue;
                     if (!element.TryGetProperty("Type", out var typeProp)) continue;
                     if (!typeProp.ValueEquals(topLevelType)) continue;
-                    if (element.TryGetProperty("Name", out var nameArr) && nameArr.ValueKind == JsonValueKind.Array)
-                    {
-                        var first = nameArr.EnumerateArray().FirstOrDefault();
-                        if (first.ValueKind == JsonValueKind.String)
-                        {
-                            var n = first.GetString();
-                            if (!string.IsNullOrWhiteSpace(n)) names.Add(n);
-                        }
-                    }
+                    if (!element.TryGetProperty("Name", out var nameArr) || nameArr.ValueKind is not JsonValueKind.Array) continue;
+                    var first = nameArr.EnumerateArray().FirstOrDefault();
+                    if (first.ValueKind is not JsonValueKind.String) continue;
+                    var n = first.GetString();
+                    if (!string.IsNullOrWhiteSpace(n)) names.Add(n);
                 }
             }
             catch
@@ -200,18 +189,19 @@ public partial class DataService : IDataService
         var idxHash = s.IndexOf('#');
         var idxSlashSlash = s.IndexOf("//", StringComparison.Ordinal);
 
-        int idx = -1;
-        void consider(int i)
+        var idx = -1;
+
+        Consider(idxSemicolon);
+        Consider(idxHash);
+        Consider(idxSlashSlash);
+
+        return idx >= 0 ? s[..idx] : s;
+
+        void Consider(int i)
         {
             if (i < 0) return;
             if (idx < 0 || i < idx) idx = i;
         }
-
-        consider(idxSemicolon);
-        consider(idxHash);
-        consider(idxSlashSlash);
-
-        return idx >= 0 ? s[..idx] : s;
     }
 
     private void HandleBlockStart(
@@ -274,19 +264,17 @@ public partial class DataService : IDataService
 
         // Final Heuristic: If there's no assignment, and it's not a common property keyword, it might be a block.
         // In the engine, many sub-blocks (nuggets) are identified this way.
-        if (!hasAssignment)
+        if (hasAssignment) return false;
+        // However, we must be careful. Many properties also don't have '='.
+        // For now, if it's not in our explicit non-block list, we'll try treating it as a block
+        // ONLY if it's inside one of the known "nugget containers" like FXList or ObjectCreationList.
+        if (parentBlock.Equals("FXList", StringComparison.OrdinalIgnoreCase) ||
+            parentBlock.Equals("ObjectCreationList", StringComparison.OrdinalIgnoreCase))
         {
-            // However, we must be careful. Many properties also don't have '='.
-            // For now, if it's not in our explicit non-block list, we'll try treating it as a block
-            // ONLY if it's inside one of the known "nugget containers" like FXList or ObjectCreationList.
-            if (parentBlock.Equals("FXList", StringComparison.OrdinalIgnoreCase) ||
-                parentBlock.Equals("ObjectCreationList", StringComparison.OrdinalIgnoreCase))
-            {
-                // SPECIAL CASE: Some keywords in these blocks are definitely properties even without '='.
-                // If it's not a known block starter and we are in OCL/FXList, we only treat it as a block
-                // if it's one of the known "nugget" types.
-                return _blockStarters.Contains(key);
-            }
+            // SPECIAL CASE: Some keywords in these blocks are definitely properties even without '='.
+            // If it's not a known block starter and we are in OCL/FXList, we only treat it as a block
+            // if it's one of the known "nugget" types.
+            return _blockStarters.Contains(key);
         }
 
         return false;

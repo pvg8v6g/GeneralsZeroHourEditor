@@ -53,9 +53,9 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
     {
         LoadSchema();
         // Subscribe to registry changes so dropdowns update live
-        gameRegistryService.Registry.Weapons.CollectionChanged += (_, __) => OnRegistriesChanged();
-        gameRegistryService.Registry.Armors.CollectionChanged += (_, __) => OnRegistriesChanged();
-        gameRegistryService.Registry.Locomotors.CollectionChanged += (_, __) => OnRegistriesChanged();
+        gameRegistryService.Registry.Weapons.CollectionChanged += (_, _) => OnRegistriesChanged();
+        gameRegistryService.Registry.Armors.CollectionChanged += (_, _) => OnRegistriesChanged();
+        gameRegistryService.Registry.Locomotors.CollectionChanged += (_, _) => OnRegistriesChanged();
 
         LoadTemplateRegistries();
         // Ensure any existing selection (if restored) gets refreshed template lists
@@ -68,14 +68,15 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
     {
         try
         {
-            var schemaPath = Path.Combine(locationService.ProjectDirectory!, "Schema", "game.schema.json");
+            if (locationService.ProjectDirectory is null) return;
+            var schemaPath = Path.Combine(locationService.ProjectDirectory, "Schema", "game.schema.json");
             if (File.Exists(schemaPath))
             {
                 gameRegistryService.LoadFromSchema(schemaPath);
             }
             else
             {
-                var projectDataDir = Path.Combine(locationService.ProjectDirectory!, "Data");
+                var projectDataDir = Path.Combine(locationService.ProjectDirectory, "Data");
                 gameRegistryService.Initialize(projectDataDir);
             }
 
@@ -103,7 +104,8 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
     private void LoadInfantryList()
     {
         Model.GameObjectGroups.Clear();
-        var projectDataDir = Path.Combine(locationService.ProjectDirectory!, "Data");
+        if (locationService.ProjectDirectory is null) return;
+        var projectDataDir = Path.Combine(locationService.ProjectDirectory, "Data");
         if (!Directory.Exists(projectDataDir)) return;
 
         var sideMap = new Dictionary<string, SideGroupModel>(StringComparer.OrdinalIgnoreCase);
@@ -113,7 +115,9 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
             try
             {
                 using var stream = File.OpenRead(jsonPath);
-                using var doc = JsonDocument.Parse(stream);
+                // Use higher parse depth to match data generation tolerances
+                var parseOptions = new JsonDocumentOptions { MaxDepth = 4096 };
+                using var doc = JsonDocument.Parse(stream, parseOptions);
                 if (doc.RootElement.ValueKind != JsonValueKind.Array) continue;
                 foreach (var element in doc.RootElement.EnumerateArray())
                 {
@@ -170,8 +174,9 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
         foreach (var w in gameRegistryService.Registry.Weapons) _weaponTemplates.Add(w);
         foreach (var l in gameRegistryService.Registry.Locomotors) _locomotors.Add(l);
 
+        if (locationService.ProjectDirectory is null) return;
         // Fallback: scan Data JSONs directly for any categories still empty or to catch new items not yet in schema
-        var projectDataDir = Path.Combine(locationService.ProjectDirectory!, "Data");
+        var projectDataDir = Path.Combine(locationService.ProjectDirectory, "Data");
         if (!Directory.Exists(projectDataDir))
         {
             // Still refresh the UI lists from whatever we already have
@@ -185,12 +190,11 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
             {
                 using var stream = File.OpenRead(jsonPath);
                 using var doc = JsonDocument.Parse(stream);
-                if (doc.RootElement.ValueKind != JsonValueKind.Array) continue;
+                if (doc.RootElement.ValueKind is not JsonValueKind.Array) continue;
 
-                foreach (var element in doc.RootElement.EnumerateArray())
+                foreach (var element in doc.RootElement.EnumerateArray().Where(element => element.ValueKind is JsonValueKind.Object))
                 {
-                    if (element.ValueKind != JsonValueKind.Object) continue;
-                    if (!element.TryGetProperty("Type", out var typeProp) || typeProp.ValueKind != JsonValueKind.String) continue;
+                    if (!element.TryGetProperty("Type", out var typeProp) || typeProp.ValueKind is not JsonValueKind.String) continue;
                     var type = typeProp.GetString();
                     if (string.IsNullOrWhiteSpace(type)) continue;
 
@@ -231,14 +235,13 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
 
     private static string? GetSide(JsonElement content)
     {
-        foreach (var prop in content.EnumerateArray())
+        foreach (var prop in content.EnumerateArray().Where(prop => prop.ValueKind == JsonValueKind.Object))
         {
-            if (prop.ValueKind != JsonValueKind.Object) continue;
             if (!prop.TryGetProperty("Key", out var keyProp)) continue;
-            if (keyProp.GetString() != "Side") continue;
-            if (!prop.TryGetProperty("Value", out var valArr) || valArr.ValueKind != JsonValueKind.Array) continue;
+            if (keyProp.GetString() is not "Side") continue;
+            if (!prop.TryGetProperty("Value", out var valArr) || valArr.ValueKind is not JsonValueKind.Array) continue;
             var first = valArr.EnumerateArray().FirstOrDefault();
-            return first.ValueKind == JsonValueKind.String ? first.GetString() : null;
+            return first.ValueKind is JsonValueKind.String ? first.GetString() : null;
         }
 
         return null;
@@ -246,16 +249,14 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
 
     private static bool HasKindOf(JsonElement content, string flag)
     {
-        foreach (var prop in content.EnumerateArray())
+        foreach (var prop in content.EnumerateArray().Where(prop => prop.ValueKind is JsonValueKind.Object))
         {
-            if (prop.ValueKind != JsonValueKind.Object) continue;
             if (!prop.TryGetProperty("Key", out var keyProp)) continue;
-            if (keyProp.GetString() != "KindOf") continue;
-            if (!prop.TryGetProperty("Value", out var valArr) || valArr.ValueKind != JsonValueKind.Array) continue;
-            foreach (var v in valArr.EnumerateArray())
-            {
-                if (v.ValueKind == JsonValueKind.String && string.Equals(v.GetString(), flag, StringComparison.OrdinalIgnoreCase)) return true;
-            }
+            if (keyProp.GetString() is not "KindOf") continue;
+            if (!prop.TryGetProperty("Value", out var valArr) || valArr.ValueKind is not JsonValueKind.Array) continue;
+            if (valArr.EnumerateArray().Any(v =>
+                    v.ValueKind is JsonValueKind.String && string.Equals(v.GetString(), flag, StringComparison.OrdinalIgnoreCase)))
+                return true;
         }
 
         return false;
@@ -263,14 +264,15 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
 
     private static string? GetName(JsonElement obj)
     {
-        if (!obj.TryGetProperty("Name", out var nameArr) || nameArr.ValueKind != JsonValueKind.Array) return null;
+        if (!obj.TryGetProperty("Name", out var nameArr) || nameArr.ValueKind is not JsonValueKind.Array) return null;
         var first = nameArr.EnumerateArray().FirstOrDefault();
-        return first.ValueKind == JsonValueKind.String ? first.GetString() : null;
+        return first.ValueKind is JsonValueKind.String ? first.GetString() : null;
     }
 
     private void LoadSelectedDetail(string name)
     {
-        var projectDataDir = Path.Combine(locationService.ProjectDirectory!, "Data");
+        if (locationService.ProjectDirectory is null) return;
+        var projectDataDir = Path.Combine(locationService.ProjectDirectory, "Data");
         if (!Directory.Exists(projectDataDir)) return;
 
         foreach (var jsonPath in Directory.EnumerateFiles(projectDataDir, "*.json", SearchOption.AllDirectories))
@@ -280,9 +282,8 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
                 using var stream = File.OpenRead(jsonPath);
                 using var doc = JsonDocument.Parse(stream);
                 if (doc.RootElement.ValueKind != JsonValueKind.Array) continue;
-                foreach (var element in doc.RootElement.EnumerateArray())
+                foreach (var element in doc.RootElement.EnumerateArray().Where(element => element.ValueKind == JsonValueKind.Object))
                 {
-                    if (element.ValueKind != JsonValueKind.Object) continue;
                     if (!element.TryGetProperty("Type", out var typeProp) || typeProp.GetString() != "Object") continue;
                     var objName = GetName(element);
                     if (!string.Equals(objName, name, StringComparison.Ordinal)) continue;
@@ -302,16 +303,98 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
                     // Belt-and-suspenders: If any list is still empty, directly parse the known catalog files.
                     PopulateAvailableDirect(projectDataDir, detail);
 
-                    // Iterate content array of key/value pairs and fill detail where relevant
-                    foreach (var item in content.EnumerateArray())
+                    // Iterate content array of key/value pairs and block items and fill detail where relevant
+                    foreach (var item in content.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.Object))
                     {
-                        if (item.ValueKind != JsonValueKind.Object) continue;
+                        // 1) Handle block items like Body/ArmorSet/WeaponSet represented as { Type, Name?, Content }
+                        if (item.TryGetProperty("Type", out var blockTypeProp) &&
+                            item.TryGetProperty("Content", out var blockContent) && blockContent.ValueKind == JsonValueKind.Array)
+                        {
+                            var blockType = blockTypeProp.GetString() ?? string.Empty;
+                            if (string.Equals(blockType, "Body", StringComparison.OrdinalIgnoreCase))
+                            {
+                                foreach (var sub in blockContent.EnumerateArray().Where(sub => sub.ValueKind == JsonValueKind.Object))
+                                {
+                                    if (!sub.TryGetProperty("Key", out var sk) || !sub.TryGetProperty("Value", out var sv) ||
+                                        sv.ValueKind != JsonValueKind.Array) continue;
+                                    var sKey = sk.GetString();
+                                    if (string.Equals(sKey, "MaxHealth", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        detail.MaxHealth = sv.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
+                                    }
+                                    else if (string.Equals(sKey, "InitialHealth", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        detail.InitialHealth = sv.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
+                                    }
+                                }
+
+                                continue;
+                            }
+                            else if (string.Equals(blockType, "ArmorSet", StringComparison.OrdinalIgnoreCase))
+                            {
+                                var armorSet = new ArmorSetModel();
+                                foreach (var sub in blockContent.EnumerateArray().Where(sub => sub.ValueKind == JsonValueKind.Object))
+                                {
+                                    if (!sub.TryGetProperty("Key", out var sk) || !sub.TryGetProperty("Value", out var sv) ||
+                                        sv.ValueKind is not JsonValueKind.Array) continue;
+                                    var sKey = sk.GetString();
+                                    if (string.Equals(sKey, "Armor", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        armorSet.Armor = sv.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
+                                    }
+                                    else if (string.Equals(sKey, "Conditions", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        var conds = sv.EnumerateArray()
+                                            .Where(x => x.ValueKind is JsonValueKind.String)
+                                            .Select(x => x.GetString())
+                                            .Where(x => x is not null)
+                                            .Cast<string>()
+                                            .ToList();
+                                        armorSet.ConditionsCsv = string.Join(", ", conds);
+                                    }
+                                }
+
+                                detail.ArmorSets.Add(armorSet);
+                                continue;
+                            }
+                            else if (string.Equals(blockType, "WeaponSet", StringComparison.OrdinalIgnoreCase))
+                            {
+                                var weaponSet = new WeaponSetModel();
+                                foreach (var sub in blockContent.EnumerateArray().Where(sub => sub.ValueKind == JsonValueKind.Object))
+                                {
+                                    if (!sub.TryGetProperty("Key", out var sk) || !sub.TryGetProperty("Value", out var sv) ||
+                                        sv.ValueKind != JsonValueKind.Array) continue;
+                                    var sKey = sk.GetString();
+                                    if (string.Equals(sKey, "Conditions", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        var conds = (from c in sv.EnumerateArray() where c.ValueKind == JsonValueKind.String select c.GetString())
+                                            .ToList();
+                                        weaponSet.ConditionsCsv = string.Join(", ", conds);
+                                    }
+                                    else if (string.Equals(sKey, "Weapon", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        var vals = sv.EnumerateArray().Where(v => v.ValueKind == JsonValueKind.String).Select(v => v.GetString())
+                                            .ToList();
+                                        if (vals.Count < 2) continue;
+                                        var slot = vals[0];
+                                        var weap = vals[1];
+                                        if (slot is null || weap is null) continue;
+                                        if (slot.Equals("PRIMARY", StringComparison.OrdinalIgnoreCase)) weaponSet.Primary = weap;
+                                        if (slot.Equals("SECONDARY", StringComparison.OrdinalIgnoreCase)) weaponSet.Secondary = weap;
+                                        if (slot.Equals("TERTIARY", StringComparison.OrdinalIgnoreCase)) weaponSet.Tertiary = weap;
+                                    }
+                                }
+
+                                detail.WeaponSets.Add(weaponSet);
+                                continue;
+                            }
+                        }
+
+                        // 2) Handle simple key/value properties
                         if (!item.TryGetProperty("Key", out var keyProp)) continue;
                         var key = keyProp.GetString();
                         if (string.IsNullOrEmpty(key)) continue;
                         if (!item.TryGetProperty("Value", out var valueArr) || valueArr.ValueKind != JsonValueKind.Array) continue;
-
-                        string FirstString() => valueArr.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
 
                         switch (key)
                         {
@@ -352,14 +435,22 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
                                 detail.BuildCompletion = FirstString();
                                 break;
                             case "Prerequisites":
-                                foreach (var v in valueArr.EnumerateArray())
-                                    if (v.ValueKind == JsonValueKind.String)
-                                        AddIfMissing(detail.Prerequisites, v.GetString()!);
+                                valueArr.EnumerateArray()
+                                    .Where(v => v.ValueKind is JsonValueKind.String)
+                                    .Select(v => v.GetString())
+                                    .Where(x => x is not null)
+                                    .Cast<string>()
+                                    .ToList()
+                                    .ForEach(x => AddIfMissing(detail.Prerequisites, x));
                                 break;
                             case "KindOf":
-                                foreach (var v in valueArr.EnumerateArray())
-                                    if (v.ValueKind == JsonValueKind.String)
-                                        AddIfMissing(detail.KindOf, v.GetString()!);
+                                valueArr.EnumerateArray()
+                                    .Where(v => v.ValueKind is JsonValueKind.String)
+                                    .Select(v => v.GetString())
+                                    .Where(x => x is not null)
+                                    .Cast<string>()
+                                    .ToList()
+                                    .ForEach(x => AddIfMissing(detail.KindOf, x));
                                 break;
                             case "VisionRange":
                                 detail.VisionRange = FirstString();
@@ -395,87 +486,7 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
                                 detail.ShadowTexture = FirstString();
                                 break;
 
-                            // Body (health)
-                            case "Body":
-                                foreach (var sub in valueArr.EnumerateArray())
-                                {
-                                    if (sub.ValueKind != JsonValueKind.Object) continue;
-                                    if (!sub.TryGetProperty("Key", out var sk) || !sub.TryGetProperty("Value", out var sv) ||
-                                        sv.ValueKind != JsonValueKind.Array) continue;
-                                    var sKey = sk.GetString();
-                                    if (string.Equals(sKey, "MaxHealth", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        detail.MaxHealth = sv.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
-                                    }
-                                    else if (string.Equals(sKey, "InitialHealth", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        detail.InitialHealth = sv.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
-                                    }
-                                }
-
-                                break;
-
-                            // ArmorSets
-                            case "ArmorSet":
-                                var armorSet = new ArmorSetModel();
-                                foreach (var sub in valueArr.EnumerateArray())
-                                {
-                                    if (sub.ValueKind != JsonValueKind.Object) continue;
-                                    if (!sub.TryGetProperty("Key", out var sk) || !sub.TryGetProperty("Value", out var sv) ||
-                                        sv.ValueKind != JsonValueKind.Array) continue;
-                                    var sKey = sk.GetString();
-                                    if (string.Equals(sKey, "Armor", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        armorSet.Armor = sv.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
-                                    }
-                                    else if (string.Equals(sKey, "Conditions", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        var conds = new List<string>();
-                                        foreach (var c in sv.EnumerateArray())
-                                            if (c.ValueKind == JsonValueKind.String)
-                                                conds.Add(c.GetString()!);
-                                        armorSet.ConditionsCsv = string.Join(", ", conds);
-                                    }
-                                }
-
-                                detail.ArmorSets.Add(armorSet);
-                                break;
-
-                            // WeaponSets
-                            case "WeaponSet":
-                                var weaponSet = new WeaponSetModel();
-                                foreach (var sub in valueArr.EnumerateArray())
-                                {
-                                    if (sub.ValueKind != JsonValueKind.Object) continue;
-                                    if (!sub.TryGetProperty("Key", out var sk) || !sub.TryGetProperty("Value", out var sv) ||
-                                        sv.ValueKind != JsonValueKind.Array) continue;
-                                    var sKey = sk.GetString();
-                                    if (string.Equals(sKey, "Conditions", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        var conds = new List<string>();
-                                        foreach (var c in sv.EnumerateArray())
-                                            if (c.ValueKind == JsonValueKind.String)
-                                                conds.Add(c.GetString()!);
-                                        weaponSet.ConditionsCsv = string.Join(", ", conds);
-                                    }
-                                    else if (string.Equals(sKey, "Weapon", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        // Expect pairs like: PRIMARY RangerRifle
-                                        var vals = sv.EnumerateArray().Where(v => v.ValueKind == JsonValueKind.String).Select(v => v.GetString()!)
-                                            .ToList();
-                                        if (vals.Count >= 2)
-                                        {
-                                            var slot = vals[0];
-                                            var weap = vals[1];
-                                            if (slot.Equals("PRIMARY", StringComparison.OrdinalIgnoreCase)) weaponSet.Primary = weap;
-                                            else if (slot.Equals("SECONDARY", StringComparison.OrdinalIgnoreCase)) weaponSet.Secondary = weap;
-                                            else if (slot.Equals("TERTIARY", StringComparison.OrdinalIgnoreCase)) weaponSet.Tertiary = weap;
-                                        }
-                                    }
-                                }
-
-                                detail.WeaponSets.Add(weaponSet);
-                                break;
+                            // Body/ArmorSet/WeaponSet are now handled via block branch above
 
                             // Movement
                             case "Locomotor":
@@ -494,6 +505,10 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
                                 detail.MovementZone = FirstString();
                                 break;
                         }
+
+                        continue;
+
+                        string FirstString() => valueArr.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
                     }
 
                     // Assign before pushing available lists so ComboBoxes get ItemsSource immediately
@@ -593,8 +608,7 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
 
     private void AddArmorSet()
     {
-        if (Model.Detail == null) return;
-        Model.Detail.ArmorSets.Add(new ArmorSetModel { Armor = string.Empty, ConditionsCsv = string.Empty });
+        Model.Detail?.ArmorSets.Add(new ArmorSetModel { Armor = string.Empty, ConditionsCsv = string.Empty });
     }
 
     private void RemoveArmorSet(ArmorSetModel? set)
@@ -605,14 +619,18 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
 
     private void AddWeaponSet()
     {
-        if (Model.Detail == null) return;
-        Model.Detail.WeaponSets.Add(new WeaponSetModel
-            { ConditionsCsv = string.Empty, Primary = string.Empty, Secondary = string.Empty, Tertiary = string.Empty });
+        Model.Detail?.WeaponSets.Add(new WeaponSetModel
+        {
+            ConditionsCsv = string.Empty,
+            Primary = string.Empty,
+            Secondary = string.Empty,
+            Tertiary = string.Empty
+        });
     }
 
     private void RemoveWeaponSet(WeaponSetModel? set)
     {
-        if (set == null) return;
+        if (set is null) return;
         Model.Detail?.WeaponSets.Remove(set);
     }
 }

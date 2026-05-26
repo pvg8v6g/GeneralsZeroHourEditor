@@ -30,13 +30,13 @@ public partial class AsyncRelayCommand<T>(Func<T, Task> execute, Func<T, bool>? 
     public bool CanExecute(object? parameter)
     {
         if (parameter is null) return false;
-        return canExecute == null || canExecute((T)parameter);
+        return canExecute == null || canExecute((T) parameter);
     }
 
     public async void Execute(object? parameter)
     {
         if (parameter is null) return;
-        await execute((T)parameter);
+        await execute((T) parameter);
     }
 
     public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);

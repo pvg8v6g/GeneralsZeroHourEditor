@@ -12,7 +12,7 @@ public class LoadedBehavior
     {
         if (depObj is FrameworkElement frameworkElement && e.NewValue is ICommand command)
         {
-            frameworkElement.Loaded += (s, args) => { command.Execute(null); };
+            frameworkElement.Loaded += (_, _) => { command.Execute(null); };
         }
     }
 

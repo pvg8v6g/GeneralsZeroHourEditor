@@ -186,7 +186,7 @@ public class BigArchiveService : IBigArchiveService
         }
         public override long Seek(long offset, SeekOrigin origin)
         {
-            long target = origin switch
+            var target = origin switch
             {
                 SeekOrigin.Begin => offset,
                 SeekOrigin.Current => _position + offset,

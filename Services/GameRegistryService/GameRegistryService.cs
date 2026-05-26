@@ -46,16 +46,14 @@ public class GameRegistryService(IDataService dataService) : IGameRegistryServic
                 using var doc = JsonDocument.Parse(stream, parseOptions);
                 if (doc.RootElement.ValueKind != JsonValueKind.Array) continue;
 
-                foreach (var element in doc.RootElement.EnumerateArray())
+                foreach (var element in doc.RootElement.EnumerateArray().Where(element => element.ValueKind == JsonValueKind.Object))
                 {
-                    if (element.ValueKind != JsonValueKind.Object) continue;
                     if (!element.TryGetProperty("Type", out var typeProp) || !typeProp.ValueEquals("Object")) continue;
                     if (!element.TryGetProperty("Content", out var content) || content.ValueKind != JsonValueKind.Array) continue;
 
-                    foreach (var item in content.EnumerateArray())
+                    foreach (var item in content.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.Object)
+                                 .Where(item => !item.TryGetProperty("Key", out _)))
                     {
-                        if (item.ValueKind != JsonValueKind.Object) continue;
-                        if (item.TryGetProperty("Key", out _)) continue; // property, not a block
                         if (!item.TryGetProperty("Type", out var subTypeProp)) continue;
 
                         var moduleType = subTypeProp.GetString() ?? string.Empty;
@@ -84,7 +82,10 @@ public class GameRegistryService(IDataService dataService) : IGameRegistryServic
                     }
                 }
             }
-            catch { /* skip corrupted files */ }
+            catch
+            {
+                /* skip corrupted files */
+            }
         }
 
         Registry.ModuleDefinitions.Clear();
@@ -96,10 +97,8 @@ public class GameRegistryService(IDataService dataService) : IGameRegistryServic
 
     private void AnalyzeModuleContent(ModuleDefinitionModel def, JsonElement content)
     {
-        foreach (var item in content.EnumerateArray())
+        foreach (var item in content.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.Object))
         {
-            if (item.ValueKind != JsonValueKind.Object) continue;
-
             if (item.TryGetProperty("Key", out var keyProp))
             {
                 var field = keyProp.GetString();
@@ -120,19 +119,12 @@ public class GameRegistryService(IDataService dataService) : IGameRegistryServic
                     def.SubBlocks.Add(subDef);
                 }
 
-                if (item.TryGetProperty("Content", out var subContent) && subContent.ValueKind == JsonValueKind.Array)
+                if (!item.TryGetProperty("Content", out var subContent) || subContent.ValueKind != JsonValueKind.Array) continue;
+                foreach (var subItem in subContent.EnumerateArray())
                 {
-                    foreach (var subItem in subContent.EnumerateArray())
-                    {
-                        if (subItem.ValueKind == JsonValueKind.Object && subItem.TryGetProperty("Key", out var subKeyProp))
-                        {
-                            var subField = subKeyProp.GetString();
-                            if (!string.IsNullOrWhiteSpace(subField) && !subDef.Fields.Contains(subField))
-                            {
-                                subDef.Fields.Add(subField);
-                            }
-                        }
-                    }
+                    if (subItem.ValueKind != JsonValueKind.Object || !subItem.TryGetProperty("Key", out var subKeyProp)) continue;
+                    var subField = subKeyProp.GetString();
+                    if (!string.IsNullOrWhiteSpace(subField) && !subDef.Fields.Contains(subField)) subDef.Fields.Add(subField);
                 }
             }
         }

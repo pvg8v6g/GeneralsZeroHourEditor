@@ -107,7 +107,7 @@
             <engineTextBox:EngineTextBox Grid.Column="1"
                                          Grid.Row="3"
                                          Header="BuildTime"
-                                         InputType="Integer"
+                                         InputType="Double"
                                          Text="{x:Bind ViewModel.Model.Detail.BuildTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
             <engineTextBox:EngineTextBox Grid.Column="0"
@@ -207,11 +207,11 @@
               </Grid.ColumnDefinitions>
               <engineTextBox:EngineTextBox Grid.Column="0"
                                            Header="MaxHealth"
-                                           InputType="Integer"
+                                           InputType="Double"
                                            Text="{x:Bind ViewModel.Model.Detail.MaxHealth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
               <engineTextBox:EngineTextBox Grid.Column="1"
                                            Header="InitialHealth"
-                                           InputType="Integer"
+                                           InputType="Double"
                                            Text="{x:Bind ViewModel.Model.Detail.InitialHealth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             </Grid>
 
