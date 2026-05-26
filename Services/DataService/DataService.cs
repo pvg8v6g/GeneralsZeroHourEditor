@@ -12,7 +12,15 @@ public partial class DataService : IDataService
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
         WriteIndented = true,
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        // Some INI files can legitimately nest many sub-blocks. Also, if a source INI
+        // is malformed, we still want to serialize a best-effort tree instead of
+        // crashing on default depth (64). Bump the JSON max depth generously.
+        MaxDepth = 256,
+        // In case of any accidental reference reuse in the constructed object graph,
+        // ignore cycles instead of throwing. Our structure should be a tree, but this
+        // keeps serialization robust across all INIs.
+        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
     };
 
     private readonly Regex _lineRegex = CompiledLineRegex();
@@ -24,7 +32,7 @@ public partial class DataService : IDataService
         "FlammableUpdate", "ConditionState", "DefaultConditionState",
         "UnitSpecificSounds", "LocomotorSet", "VisionData", "ProjectileSet",
         "SideSet", "EngineeringParameters", "UnitAbsorbAbilitiesUpgrade",
-        "WeaponBonus", "ExperienceLevel", "AutoDepositUpdate", "GrantUpgradeCreate",
+        "ExperienceLevel", "AutoDepositUpdate", "GrantUpgradeCreate",
         "AttributeModifierUpgrade", "StealthUpdate", "ProductionUpdate",
         "QueueProductionExitUpdate", "SpawnBehavior", "SpecialAbility",
         "SpecialPower", "SpecialAbilityUpdate", "DynamicShroudClearingRangeUpdate",
@@ -50,7 +58,7 @@ public partial class DataService : IDataService
         "ScatterRadiusVsInfantry", "AttackRange", "MinimumAttackRange", "DefaultStructureRubbleHeight",
         "VertexWaterAvailableMaps1", "VertexWaterXPosition1", "VertexWaterYPosition1",
         "VertexWaterZPosition1", "VertexWaterXGridCells1", "VertexWaterYGridCells1",
-        "VertexWaterGridSize1"
+        "VertexWaterGridSize1", "WeaponBonus"
     };
 
     private readonly HashSet<string> _topLevelBlocks = new(StringComparer.OrdinalIgnoreCase)
@@ -98,25 +106,29 @@ public partial class DataService : IDataService
         var stack = new Stack<List<object>>();
         var blockTypeStack = new Stack<string>();
         List<object> currentList = [];
+        // Keep a stable reference to the true root array to avoid returning a nested list
+        // if an 'End' line is missed or malformed in source content.
+        var rootList = currentList;
 
         foreach (var rawLine in lines)
         {
             var lineWithComments = rawLine.Trim();
-            var line = rawLine.Split(';')[0].Trim();
+            // Strip common INI comment styles: ';', '//', and '#'. Use the earliest occurrence.
+            var commentStripped = StripComments(rawLine);
+            var line = commentStripped.Trim();
             if (string.IsNullOrWhiteSpace(line)) continue;
 
             if (line.Equals("End", StringComparison.OrdinalIgnoreCase))
             {
-                if (lineWithComments.Split(';')[0].Trim().Length <= 3)
+                // Always treat a standalone 'End' (after trimming ';' comments) as the end of the current block.
+                // This makes the parser resilient to inline comments or extra whitespace.
+                if (stack.Count > 0)
                 {
-                    if (stack.Count > 0)
-                    {
-                        currentList = stack.Pop();
-                        blockTypeStack.Pop();
-                    }
-
-                    continue;
+                    currentList = stack.Pop();
+                    blockTypeStack.Pop();
                 }
+
+                continue;
             }
 
             var match = _lineRegex.Match(line);
@@ -136,18 +148,20 @@ public partial class DataService : IDataService
             }
         }
 
-        return JsonSerializer.Serialize(currentList, _jsonOptions);
+        // Always serialize from the root list to avoid returning a nested list when a closing 'End' was missed.
+        return JsonSerializer.Serialize(rootList, _jsonOptions);
     }
 
     public string[] CollectTopLevelNames(string projectDataDir, string topLevelType)
     {
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var parseOptions = new JsonDocumentOptions { MaxDepth = 4096 };
         foreach (var jsonPath in Directory.EnumerateFiles(projectDataDir, "*.json", SearchOption.AllDirectories))
         {
             try
             {
                 using var stream = File.OpenRead(jsonPath);
-                using var doc = JsonDocument.Parse(stream);
+                using var doc = JsonDocument.Parse(stream, parseOptions);
                 if (doc.RootElement.ValueKind != JsonValueKind.Array) continue;
                 foreach (var element in doc.RootElement.EnumerateArray())
                 {
@@ -177,6 +191,28 @@ public partial class DataService : IDataService
     #endregion
 
     #region Private Functions
+
+    private static string StripComments(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return string.Empty;
+        // Normalize to simple string scanning; do not allocate too much
+        var idxSemicolon = s.IndexOf(';');
+        var idxHash = s.IndexOf('#');
+        var idxSlashSlash = s.IndexOf("//", StringComparison.Ordinal);
+
+        int idx = -1;
+        void consider(int i)
+        {
+            if (i < 0) return;
+            if (idx < 0 || i < idx) idx = i;
+        }
+
+        consider(idxSemicolon);
+        consider(idxHash);
+        consider(idxSlashSlash);
+
+        return idx >= 0 ? s[..idx] : s;
+    }
 
     private void HandleBlockStart(
         string key,
@@ -214,14 +250,9 @@ public partial class DataService : IDataService
 
         if (_topLevelBlocks.Contains(key))
         {
-            if (blockTypeStack.Count == 0) return true;
-            if (_parentBlocksPreventingObject.Contains(parentBlock)) return false;
-
-            // HEURISTIC: If it's a top level block keyword but inside another block and HAS an assignment,
-            // it's almost certainly a property (e.g. Locomotor = ..., CommandSet = ...)
-            if (hasAssignment) return false;
-
-            return true;
+            // Top-level blocks (Weapon, Object, FXList, etc.) must only start at the root of a file.
+            // Allowing them inside another block causes invalid nesting (e.g., Weapon inside Weapon).
+            return blockTypeStack.Count == 0;
         }
 
         if (_blockStarters.Contains(key))

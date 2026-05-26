@@ -37,12 +37,13 @@ public class GameRegistryService(IDataService dataService) : IGameRegistryServic
     {
         var moduleMap = new Dictionary<string, ModuleDefinitionModel>(StringComparer.OrdinalIgnoreCase);
 
+        var parseOptions = new JsonDocumentOptions { MaxDepth = 4096 };
         foreach (var jsonPath in Directory.EnumerateFiles(projectDataDir, "*.json", SearchOption.AllDirectories))
         {
             try
             {
                 using var stream = File.OpenRead(jsonPath);
-                using var doc = JsonDocument.Parse(stream);
+                using var doc = JsonDocument.Parse(stream, parseOptions);
                 if (doc.RootElement.ValueKind != JsonValueKind.Array) continue;
 
                 foreach (var element in doc.RootElement.EnumerateArray())

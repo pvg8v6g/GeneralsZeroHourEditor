@@ -165,8 +165,9 @@ public class InitialLoadDataTask(ILocationService locationService, IJsonService 
 
     private static string MergeTopLevelBlocks(string generalsJson, string zhJson)
     {
-        using var zhDoc = JsonDocument.Parse(string.IsNullOrWhiteSpace(zhJson) ? "[]" : zhJson);
-        using var genDoc = JsonDocument.Parse(string.IsNullOrWhiteSpace(generalsJson) ? "[]" : generalsJson);
+        var parseOptions = new JsonDocumentOptions { MaxDepth = 4096 };
+        using var zhDoc = JsonDocument.Parse(string.IsNullOrWhiteSpace(zhJson) ? "[]" : zhJson, parseOptions);
+        using var genDoc = JsonDocument.Parse(string.IsNullOrWhiteSpace(generalsJson) ? "[]" : generalsJson, parseOptions);
 
         var dict = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
         static string? KeyFor(JsonElement el)
@@ -213,13 +214,13 @@ public class InitialLoadDataTask(ILocationService locationService, IJsonService 
             // Add ZH-only misc entries first, then Generals-only ones that are not duplicates
             foreach (var raw in zhMisc)
             {
-                using var t = JsonDocument.Parse(raw);
+                using var t = JsonDocument.Parse(raw, parseOptions);
                 t.RootElement.WriteTo(writer);
             }
             foreach (var raw in genMisc)
             {
                 if (zhMisc.Contains(raw)) continue;
-                using var t = JsonDocument.Parse(raw);
+                using var t = JsonDocument.Parse(raw, parseOptions);
                 t.RootElement.WriteTo(writer);
             }
             writer.WriteEndArray();
