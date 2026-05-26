@@ -198,16 +198,126 @@
         <!-- 3) Armor & Health -->
         <enginePanel:EnginePanel Title="Armor &amp; Health"
                                  Visibility="{x:Bind ViewModel.Model.SelectedNode, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
-          <StackPanel Spacing="6">
-            <TextBlock Text="Body (Max/Initial Health), ArmorSets with Conditions, Resistances, Death FX" />
+          <StackPanel Spacing="10">
+            <!-- Body -->
+            <Grid ColumnSpacing="12">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <engineTextBox:EngineTextBox Grid.Column="0"
+                                           Header="MaxHealth"
+                                           InputType="Integer"
+                                           Text="{x:Bind ViewModel.Model.Detail.MaxHealth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              <engineTextBox:EngineTextBox Grid.Column="1"
+                                           Header="InitialHealth"
+                                           InputType="Integer"
+                                           Text="{x:Bind ViewModel.Model.Detail.InitialHealth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            </Grid>
+
+            <!-- Armor Sets -->
+            <StackPanel Spacing="6">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Armor Sets" FontWeight="SemiBold" />
+                <Button Grid.Column="1"
+                        Content="Add Set"
+                        Command="{x:Bind ViewModel.AddArmorSetCommand}" />
+              </Grid>
+
+              <ListView x:Name="ArmorSetsList"
+                        ItemsSource="{x:Bind ViewModel.Model.Detail.ArmorSets, Mode=OneWay}">
+                <ListView.ItemTemplate>
+                  <DataTemplate x:DataType="models:ArmorSetModel">
+                    <Grid ColumnSpacing="8">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                      </Grid.ColumnDefinitions>
+
+                      <ComboBox Grid.Column="0"
+                                Header="Armor"
+                                ItemsSource="{Binding ElementName=ArmorSetsList, Path=DataContext.Model.Detail.AvailableArmorTemplates}"
+                                SelectedItem="{x:Bind Armor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                      <engineTextBox:EngineTextBox Grid.Column="1"
+                                                   Header="Conditions (csv)"
+                                                   Text="{x:Bind ConditionsCsv, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                      <Button Grid.Column="2"
+                              Content="Remove"
+                              Command="{Binding ElementName=PageRoot, Path=ViewModel.RemoveArmorSetCommand}"
+                              CommandParameter="{Binding}" />
+                    </Grid>
+                  </DataTemplate>
+                </ListView.ItemTemplate>
+              </ListView>
+            </StackPanel>
           </StackPanel>
         </enginePanel:EnginePanel>
 
         <!-- 4) Weapons -->
         <enginePanel:EnginePanel Title="Weapons"
                                  Visibility="{x:Bind ViewModel.Model.SelectedNode, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
-          <StackPanel Spacing="6">
-            <TextBlock Text="WeaponSets with Conditions, targeting and switching options" />
+          <StackPanel Spacing="10">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="Weapon Sets" FontWeight="SemiBold" />
+              <Button Grid.Column="1"
+                      Content="Add Set"
+                      Command="{x:Bind ViewModel.AddWeaponSetCommand}" />
+            </Grid>
+
+            <ListView x:Name="WeaponSetsList"
+                      ItemsSource="{x:Bind ViewModel.Model.Detail.WeaponSets, Mode=OneWay}">
+              <ListView.ItemTemplate>
+                <DataTemplate x:DataType="models:WeaponSetModel">
+                  <Grid ColumnSpacing="8" RowSpacing="6">
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="Auto" />
+                      <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ComboBox Grid.Row="0" Grid.Column="0"
+                              Header="Primary"
+                              ItemsSource="{Binding ElementName=WeaponSetsList, Path=DataContext.Model.Detail.AvailableWeaponTemplates}"
+                              SelectedItem="{x:Bind Primary, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <ComboBox Grid.Row="0" Grid.Column="1"
+                              Header="Secondary"
+                              ItemsSource="{Binding ElementName=WeaponSetsList, Path=DataContext.Model.Detail.AvailableWeaponTemplates}"
+                              SelectedItem="{x:Bind Secondary, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <ComboBox Grid.Row="0" Grid.Column="2"
+                              Header="Tertiary"
+                              ItemsSource="{Binding ElementName=WeaponSetsList, Path=DataContext.Model.Detail.AvailableWeaponTemplates}"
+                              SelectedItem="{x:Bind Tertiary, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <Button Grid.Row="0" Grid.Column="3"
+                            Content="Remove"
+                            Command="{Binding ElementName=PageRoot, Path=ViewModel.RemoveWeaponSetCommand}"
+                            CommandParameter="{Binding}" />
+
+                    <engineTextBox:EngineTextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4"
+                                                 Header="Conditions (csv)"
+                                                 Text="{x:Bind ConditionsCsv, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                  </Grid>
+                </DataTemplate>
+              </ListView.ItemTemplate>
+            </ListView>
           </StackPanel>
         </enginePanel:EnginePanel>
 
@@ -222,9 +332,39 @@
         <!-- 6) Movement -->
         <enginePanel:EnginePanel Title="Movement"
                                  Visibility="{x:Bind ViewModel.Model.SelectedNode, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
-          <StackPanel Spacing="6">
-            <TextBlock Text="Locomotor selection, Speed/Acceleration/TurnRate, MovementZone" />
-          </StackPanel>
+          <Grid RowSpacing="10" ColumnSpacing="12">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <ComboBox Grid.Row="0" Grid.Column="0"
+                      Header="Locomotor"
+                      ItemsSource="{x:Bind ViewModel.Model.Detail.AvailableLocomotors, Mode=OneWay}"
+                      SelectedItem="{x:Bind ViewModel.Model.Detail.Locomotor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <engineTextBox:EngineTextBox Grid.Row="0" Grid.Column="1"
+                                         Header="MovementZone"
+                                         Text="{x:Bind ViewModel.Model.Detail.MovementZone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+            <engineTextBox:EngineTextBox Grid.Row="1" Grid.Column="0"
+                                         Header="Speed"
+                                         InputType="Double"
+                                         Text="{x:Bind ViewModel.Model.Detail.Speed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <engineTextBox:EngineTextBox Grid.Row="1" Grid.Column="1"
+                                         Header="Acceleration"
+                                         InputType="Double"
+                                         Text="{x:Bind ViewModel.Model.Detail.Acceleration, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+            <engineTextBox:EngineTextBox Grid.Row="2" Grid.Column="0"
+                                         Header="TurnRate"
+                                         InputType="Double"
+                                         Text="{x:Bind ViewModel.Model.Detail.TurnRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+          </Grid>
         </enginePanel:EnginePanel>
 
         <!-- 7) Vision & Shroud -->
