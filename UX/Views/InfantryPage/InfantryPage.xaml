@@ -1,5 +1,4 @@
 ﻿<Page x:Class="GeneralsZeroHourEditor.UX.Views.InfantryPage.InfantryPage"
-      x:Name="PageRoot"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -51,7 +50,8 @@
         <!-- 1) Object metadata -->
         <enginePanel:EnginePanel Title="Object Metadata"
                                  Visibility="{x:Bind ViewModel.Model.SelectedNode, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
-          <Grid RowSpacing="10" ColumnSpacing="12">
+          <Grid RowSpacing="10"
+                ColumnSpacing="12">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="2*" />
               <ColumnDefinition Width="2*" />
@@ -64,7 +64,7 @@
               <RowDefinition Height="Auto" />  <!-- Row 2: SelectPortrait / ButtonImage -->
               <RowDefinition Height="Auto" />  <!-- Row 3: BuildCost / BuildTime -->
               <RowDefinition Height="Auto" />  <!-- Row 4: BuildCompletion -->
-              <RowDefinition Height="*" />     <!-- Row 5: Lists (Prerequisites / KindOf) -->
+              <RowDefinition Height="Auto" />  <!-- Row 5: Lists (Prerequisites / KindOf) -->
             </Grid.RowDefinitions>
 
             <!-- Identity & UI Art -->
@@ -116,32 +116,80 @@
                                          Header="BuildCompletion"
                                          Text="{x:Bind ViewModel.Model.Detail.BuildCompletion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <!-- Prerequisites (list) -->
-            <StackPanel Grid.Column="0" Grid.Row="5" Spacing="4">
-              <TextBlock Text="Prerequisites" FontWeight="SemiBold" />
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <engineTextBox:EngineTextBox x:Name="PrereqInput"
-                                             Width="240"
-                                             PlaceholderText="Add prerequisite token" />
-                <Button Content="Add"
-                        Command="{Binding ElementName=PageRoot, Path=ViewModel.AddPrerequisiteCommand}"
-                        CommandParameter="{Binding ElementName=PrereqInput, Path=Text}"
-                        ToolTipService.ToolTip="Add prerequisite" />
-              </StackPanel>
-              <ListView ItemsSource="{x:Bind ViewModel.Model.Detail.Prerequisites, Mode=OneWay}"
-                        SelectionMode="Single">
+            <!-- Prerequisites (typed list: Object/Science) -->
+            <StackPanel Grid.Column="0"
+                        Grid.Row="5"
+                        HorizontalAlignment="Stretch"
+                        Spacing="4">
+              <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Prerequisites" FontWeight="SemiBold" />
+                <Button Grid.Column="1"
+                        Content="Add"
+                        Command="{x:Bind ViewModel.AddPrerequisiteCommand, Mode=OneWay}"
+                        ToolTipService.ToolTip="Add prerequisite row" />
+              </Grid>
+
+              <ListView x:Name="PrereqList"
+                        Tag="{x:Bind ViewModel, Mode=OneWay}"
+                        ItemsSource="{x:Bind ViewModel.Model.Detail.PrereqEntries, Mode=OneWay}">
                 <ListView.ItemTemplate>
-                  <DataTemplate x:DataType="x:String">
-                    <Grid ColumnSpacing="6">
+                  <DataTemplate x:DataType="models:PrerequisiteEntryModel">
+                    <Grid ColumnSpacing="8"
+                          Padding="0 10 0 10">
                       <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                       </Grid.ColumnDefinitions>
-                      <TextBlock Text="{x:Bind}" />
-                      <Button Grid.Column="1"
-                              Content="Remove"
-                              Command="{Binding ElementName=PageRoot, Path=ViewModel.RemovePrerequisiteCommand}"
-                              CommandParameter="{Binding}" />
+
+                      <!-- Type picker -->
+                      <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
+                      <ComboBox Grid.Column="0"
+                                MinWidth="200"
+                                MaxWidth="200"
+                                HorizontalContentAlignment="Stretch"
+                                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                ItemsSource="{Binding ElementName=PrereqList, Path=Tag.PrereqTypes}"
+                                SelectedItem="{x:Bind Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate>
+                            <TextBlock Text="{Binding}"
+                                       TextWrapping="NoWrap"
+                                       TextTrimming="CharacterEllipsis" />
+                          </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+
+                      <!-- Value picker (items depend on Type) -->
+                      <ComboBox Grid.Column="1"
+                                MinWidth="200"
+                                MaxWidth="200"
+                                HorizontalContentAlignment="Stretch"
+                                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                ItemsSource="{x:Bind Items, Mode=OneWay}"
+                                SelectedItem="{x:Bind Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate>
+                            <TextBlock Text="{Binding}"
+                                       TextWrapping="NoWrap"
+                                       TextTrimming="CharacterEllipsis" />
+                          </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+
+                      <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
+                      <Button Grid.Column="2"
+                              ToolTipService.ToolTip="Remove"
+                              AutomationProperties.Name="Remove"
+                              Command="{Binding ElementName=PrereqList, Path=Tag.RemovePrerequisiteCommand}"
+                              CommandParameter="{Binding}"
+                              Background="{StaticResource RedBrush}">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
+                      </Button>
                     </Grid>
                   </DataTemplate>
                 </ListView.ItemTemplate>
@@ -149,18 +197,23 @@
             </StackPanel>
 
             <!-- KindOf flags (list) -->
-            <StackPanel Grid.Column="1" Grid.Row="5" Spacing="4">
+            <StackPanel Grid.Column="1"
+                        Grid.Row="5"
+                        HorizontalAlignment="Stretch"
+                        Spacing="4">
               <TextBlock Text="KindOf" FontWeight="SemiBold" />
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <engineTextBox:EngineTextBox x:Name="KindOfInput"
                                              Width="240"
                                              PlaceholderText="Add KindOf flag" />
                 <Button Content="Add"
-                        Command="{Binding ElementName=PageRoot, Path=ViewModel.AddKindOfCommand}"
-                        CommandParameter="{Binding ElementName=KindOfInput, Path=Text}"
+                        Command="{x:Bind ViewModel.AddKindOfCommand, Mode=OneWay}"
+                        CommandParameter="{x:Bind KindOfInput.Text, Mode=OneWay}"
                         ToolTipService.ToolTip="Add KindOf flag" />
               </StackPanel>
-              <ListView ItemsSource="{x:Bind ViewModel.Model.Detail.KindOf, Mode=OneWay}"
+              <ListView x:Name="KindOfList"
+                        Tag="{x:Bind ViewModel, Mode=OneWay}"
+                        ItemsSource="{x:Bind ViewModel.Model.Detail.KindOf, Mode=OneWay}"
                         SelectionMode="Single">
                 <ListView.ItemTemplate>
                   <DataTemplate x:DataType="x:String">
@@ -169,11 +222,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                       </Grid.ColumnDefinitions>
-                      <TextBlock Text="{x:Bind}" />
+                      <TextBlock Text="{x:Bind}"
+                                 VerticalAlignment="Center" />
+                      <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                       <Button Grid.Column="1"
-                              Content="Remove"
-                              Command="{Binding ElementName=PageRoot, Path=ViewModel.RemoveKindOfCommand}"
-                              CommandParameter="{Binding}" />
+                              ToolTipService.ToolTip="Remove"
+                              AutomationProperties.Name="Remove"
+                              Command="{Binding ElementName=KindOfList, Path=Tag.RemoveKindOfCommand}"
+                              CommandParameter="{Binding}"
+                              Background="{StaticResource RedBrush}">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
+                      </Button>
                     </Grid>
                   </DataTemplate>
                 </ListView.ItemTemplate>
@@ -246,16 +305,18 @@
                         <RowDefinition Height="Auto" />
                       </Grid.RowDefinitions>
 
+                      <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                       <ComboBox Grid.Column="0"
                                 Header="Armor"
                                 ItemsSource="{Binding ElementName=ArmorSetsList, Path=Tag.Model.Detail.AvailableArmorTemplates}"
-                                SelectedItem="{x:Bind Armor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                SelectedItem="{x:Bind Armor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 
                       <engineTextBox:EngineTextBox Grid.Column="0"
                                                    Grid.Row="1"
                                                    Header="Conditions (csv)"
                                                    Text="{x:Bind ConditionsCsv, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
+                      <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                       <Button Grid.Column="1"
                               Grid.Row="0"
                               Grid.RowSpan="2" ToolTipService.ToolTip="Remove"
@@ -307,28 +368,32 @@
                       <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
+                    <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                     <ComboBox Grid.Row="0"
                               Grid.Column="0"
                               Header="Primary"
                               ItemsSource="{Binding ElementName=WeaponSetsList, Path=Tag.Model.Detail.AvailableWeaponTemplates}"
-                              SelectedItem="{x:Bind Primary, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                              SelectedItem="{x:Bind Primary, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 
+                    <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                     <ComboBox Grid.Row="0"
                               Grid.Column="1"
                               Header="Secondary"
                               ItemsSource="{Binding ElementName=WeaponSetsList, Path=Tag.Model.Detail.AvailableWeaponTemplates}"
-                              SelectedItem="{x:Bind Secondary, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                              SelectedItem="{x:Bind Secondary, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 
+                    <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                     <ComboBox Grid.Row="0"
                               Grid.Column="2"
                               Header="Tertiary"
                               ItemsSource="{Binding ElementName=WeaponSetsList, Path=Tag.Model.Detail.AvailableWeaponTemplates}"
-                              SelectedItem="{x:Bind Tertiary, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                              SelectedItem="{x:Bind Tertiary, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 
                     <engineTextBox:EngineTextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
                                                  Header="Conditions (csv)"
                                                  Text="{x:Bind ConditionsCsv, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
+                    <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                     <Button Grid.Column="3"
                             Grid.Row="0"
                             Grid.RowSpan="2"
@@ -388,16 +453,18 @@
                       <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
+                    <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                     <ComboBox Grid.Column="0"
                               Header="Locomotors"
                               ItemsSource="{Binding ElementName=LocomotorList, Path=Tag.Model.Detail.AvailableLocomotors}"
-                              SelectedItem="{x:Bind Locomotor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                              SelectedItem="{x:Bind Locomotor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 
                     <engineTextBox:EngineTextBox Grid.Column="0"
                                                  Grid.Row="1"
                                                  Header="Conditions (csv)"
                                                  Text="{x:Bind ConditionsCsv, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
+                    <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                     <Button Grid.Column="1"
                             Grid.Row="0"
                             Grid.RowSpan="2"

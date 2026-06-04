@@ -1,4 +1,5 @@
-﻿using MercuryLibrary.WinUI3Components;
+﻿using System.Collections.ObjectModel;
+using MercuryLibrary.WinUI3Components;
 
 namespace GeneralsZeroHourEditor.Services.GameDataService;
 
@@ -17,6 +18,14 @@ public class GameDataService : PropertyChangedUpdater, IGameDataService
         get;
         set => SetField(ref field, value);
     } = 0.0d;
+
+    public ObservableCollection<string> GameWeapons { get; } = [];
+
+    public ObservableCollection<string> GameArmors { get; } = [];
+
+    public ObservableCollection<string> GameLocomotors { get; } = [];
+
+    public ObservableCollection<string> FXLists { get; } = [];
 
     #endregion
 }

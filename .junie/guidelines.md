@@ -3,7 +3,7 @@
 **General Stuff**
 
 - always use primary constructors when possible.
-- use the `field` keyword for databinding.
+- use the `field` keyword wherever possible.
 - SetField is a properly constructed method for handling property changes and notifying observers.
 - this is a winui3 project and should be treated as such.
 - this is STRICT mvvm pattern. do NOT add methods to the view for any reason other than binding the datacontext.
@@ -11,6 +11,7 @@
 - the source code for the game engine this is built to mod is https://github.com/electronicarts/CnC_Generals_Zero_Hour.
   this is super important to know because this engine i'm building is to mod this game.
 - use region tags for organization.
+- Use collection expressions when possible.
 
 **XAML Stuff**
 

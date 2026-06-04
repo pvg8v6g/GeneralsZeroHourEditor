@@ -11,7 +11,33 @@ namespace GeneralsZeroHourEditor.UX.ViewModels.InfantryPage;
 
 public class InfantryPageViewModel(ILocationService locationService, IGameRegistryService gameRegistryService) : BaseViewModel
 {
+    #region Properties
+
     public GameObjectPageModel Model { get; } = new();
+
+    public string[] Armors
+    {
+        get;
+        set => SetField(ref field, value);
+    } = [];
+
+    public string[] Weapons
+    {
+        get;
+        set => SetField(ref field, value);
+    } = [];
+
+    public string[] Locomotors
+    {
+        get;
+        set => SetField(ref field, value);
+    } = [];
+
+    public IReadOnlyList<string> PrereqTypes => _prereqTypes;
+
+    #endregion
+
+    #region Fields
 
     // Cached registries discovered from project Data JSONs
     private readonly SortedSet<string> _armorTemplates = new(StringComparer.OrdinalIgnoreCase);
@@ -20,11 +46,17 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
 
     // Note: event subscriptions are registered in LoadedAction to avoid constructor syntax conflicts.
 
-    public RelayCommand<object> ItemInvokedCommand => new(OnItemInvoked);
+    private static readonly string[] _prereqTypes = ["Object", "Science"];
 
-    public RelayCommand<string> AddPrerequisiteCommand => new(AddPrerequisite);
+    #endregion
 
-    public RelayCommand<string> RemovePrerequisiteCommand => new(RemovePrerequisite);
+    #region Commands
+
+    public RelayCommand<object> ItemInvokedCommand => new(SelectedItemChanged);
+
+    public RelayCommand AddPrerequisiteCommand => new(() => AddPrerequisite(null));
+
+    public RelayCommand<PrerequisiteEntryModel> RemovePrerequisiteCommand => new(RemovePrerequisite);
 
     public RelayCommand<string> AddKindOfCommand => new(AddKindOf);
 
@@ -44,13 +76,9 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
 
     public RelayCommand<LocomotorSetModel> RemoveLocomotorCommand => new(RemoveLocomotorSet);
 
+    #endregion
 
-    private void OnItemInvoked(object? invokedItem)
-    {
-        if (invokedItem is not GameObjectItemModel item) return;
-        Model.SelectedNode = item;
-        LoadSelectedDetail(item.Name);
-    }
+    #region Actions & Listeners
 
     protected override async Task LoadedAction()
     {
@@ -66,6 +94,17 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
         LoadInfantryList();
         await Task.CompletedTask;
     }
+
+    private void SelectedItemChanged(object? invokedItem)
+    {
+        if (invokedItem is not GameObjectItemModel item) return;
+        Model.SelectedNode = item;
+        LoadSelectedDetail(item.Name);
+    }
+
+    #endregion
+
+    #region Initialization
 
     private void LoadSchema()
     {
@@ -236,6 +275,10 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
         foreach (var l in _locomotors) Model.Detail.AvailableLocomotors.Add(l);
     }
 
+    #endregion
+
+    #region Parsing Helpers
+
     private static string? GetSide(JsonElement content)
     {
         foreach (var prop in content.EnumerateArray().Where(prop => prop.ValueKind == JsonValueKind.Object))
@@ -272,6 +315,10 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
         return first.ValueKind is JsonValueKind.String ? first.GetString() : null;
     }
 
+    #endregion
+
+    #region Detail Loading
+
     private void LoadSelectedDetail(string name)
     {
         if (locationService.ProjectDirectory is null) return;
@@ -293,18 +340,27 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
 
                     if (!element.TryGetProperty("Content", out var content) || content.ValueKind != JsonValueKind.Array) continue;
                     var detail = new GameObjectDetailModel { Name = name, SourceFilePath = jsonPath };
+                    // Bind the UI to the new detail early so templated controls (ComboBoxes/ListViews)
+                    // always refer to the current Model.Detail during population.
+                    Model.Detail = detail;
 
-                    // Populate available registries for pickers (clear first for robustness)
-                    // First, try cached registries gathered earlier
+                    // Ensure catalogs are ready BEFORE we parse and materialize content so ComboBoxes have
+                    // valid ItemsSource as rows are created and selections apply immediately.
+                    // 1) Prime from central registry directly (deterministic and fast)
                     detail.AvailableArmorTemplates.Clear();
+                    foreach (var a in gameRegistryService.Registry.Armors) detail.AvailableArmorTemplates.Add(a);
                     detail.AvailableWeaponTemplates.Clear();
+                    foreach (var w in gameRegistryService.Registry.Weapons) detail.AvailableWeaponTemplates.Add(w);
                     detail.AvailableLocomotors.Clear();
-                    foreach (var a in _armorTemplates) detail.AvailableArmorTemplates.Add(a);
-                    foreach (var w in _weaponTemplates) detail.AvailableWeaponTemplates.Add(w);
-                    foreach (var l in _locomotors) detail.AvailableLocomotors.Add(l);
+                    foreach (var l in gameRegistryService.Registry.Locomotors) detail.AvailableLocomotors.Add(l);
 
-                    // Belt-and-suspenders: If any list is still empty, directly parse the known catalog files.
+                    // 2) Also refresh cached registries and push, in case schema was not yet initialized
+                    LoadTemplateRegistries(); // refresh cached sets from schema/Data
+                    RefreshAvailableLists(); // push cached sets into current detail (merges with step 1)
+
+                    // 3) Fallback scanning of project Data for any names missing from registry (robustness)
                     PopulateAvailableDirect(projectDataDir, detail);
+                    PopulatePrereqCatalogs(projectDataDir, detail); // objects/sciences catalogs
 
                     // Iterate content array of key/value pairs and block items and fill detail where relevant
                     foreach (var item in content.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.Object))
@@ -391,6 +447,25 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
                                 detail.WeaponSets.Add(weaponSet);
                                 continue;
                             }
+                            else if (string.Equals(blockType, "Prerequisites", StringComparison.OrdinalIgnoreCase))
+                            {
+                                foreach (var sub in blockContent.EnumerateArray().Where(sub => sub.ValueKind == JsonValueKind.Object))
+                                {
+                                    if (!sub.TryGetProperty("Key", out var sk) || !sub.TryGetProperty("Value", out var sv) ||
+                                        sv.ValueKind != JsonValueKind.Array) continue;
+                                    var sKey = sk.GetString() ?? string.Empty;
+                                    var first = sv.EnumerateArray().FirstOrDefault();
+                                    var sVal = first.ValueKind == JsonValueKind.String ? (first.GetString() ?? string.Empty) : string.Empty;
+                                    if (!string.IsNullOrWhiteSpace(sKey) && !string.IsNullOrWhiteSpace(sVal))
+                                    {
+                                        var entry = new PrerequisiteEntryModel { Type = sKey, Value = sVal };
+                                        entry.AttachCatalogs(detail.AvailableObjects, detail.AvailableSciences);
+                                        detail.PrereqEntries.Add(entry);
+                                    }
+                                }
+
+                                continue;
+                            }
                         }
 
                         // 2) Handle simple key/value properties
@@ -437,15 +512,7 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
                             case "BuildCompletion":
                                 detail.BuildCompletion = FirstString();
                                 break;
-                            case "Prerequisites":
-                                valueArr.EnumerateArray()
-                                    .Where(v => v.ValueKind is JsonValueKind.String)
-                                    .Select(v => v.GetString())
-                                    .Where(x => x is not null)
-                                    .Cast<string>()
-                                    .ToList()
-                                    .ForEach(x => AddIfMissing(detail.Prerequisites, x));
-                                break;
+                            // Prerequisites handled via block above
                             case "KindOf":
                                 valueArr.EnumerateArray()
                                     .Where(v => v.ValueKind is JsonValueKind.String)
@@ -522,8 +589,6 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
                         string FirstString() => valueArr.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
                     }
 
-                    // Assign before pushing available lists so ComboBoxes get ItemsSource immediately
-                    Model.Detail = detail;
                     // Now push current cached registries into the detail's Available* collections
                     RefreshAvailableLists();
                     return;
@@ -534,6 +599,110 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
                 // ignore bad file
             }
         }
+    }
+
+    #endregion
+
+    #region Catalog Population
+
+    private static void PopulatePrereqCatalogs(string projectDataDir, GameObjectDetailModel detail)
+    {
+        void ReadNames(string filePath, string typeName, ICollection<string> destination)
+        {
+            if (!File.Exists(filePath)) return;
+            try
+            {
+                using var stream = File.OpenRead(filePath);
+                using var doc = JsonDocument.Parse(stream);
+                if (doc.RootElement.ValueKind != JsonValueKind.Array) return;
+                foreach (var element in doc.RootElement.EnumerateArray())
+                {
+                    if (element.ValueKind != JsonValueKind.Object) continue;
+                    if (!element.TryGetProperty("Type", out var typeProp) || typeProp.ValueKind != JsonValueKind.String) continue;
+                    if (!string.Equals(typeProp.GetString(), typeName, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (!element.TryGetProperty("Name", out var nameArr) || nameArr.ValueKind != JsonValueKind.Array) continue;
+                    var first = nameArr.EnumerateArray().FirstOrDefault();
+                    if (first.ValueKind == JsonValueKind.String)
+                    {
+                        var n = first.GetString();
+                        if (!string.IsNullOrWhiteSpace(n) && !destination.Contains(n)) destination.Add(n);
+                    }
+                }
+            }
+            catch
+            {
+                /* ignore */
+            }
+        }
+
+        // Objects: filter to structures only (KindOf contains STRUCTURE). Scan all project Data JSONs;
+        // there might not be a single consolidated Object.json at the root.
+        if (detail.AvailableObjects.Count == 0 && Directory.Exists(projectDataDir))
+        {
+            var parseOptions = new JsonDocumentOptions { MaxDepth = 4096 };
+            foreach (var jsonPath in Directory.EnumerateFiles(projectDataDir, "*.json", SearchOption.AllDirectories))
+            {
+                try
+                {
+                    using var stream = File.OpenRead(jsonPath);
+                    using var doc = JsonDocument.Parse(stream, parseOptions);
+                    if (doc.RootElement.ValueKind != JsonValueKind.Array) continue;
+                    foreach (var el in doc.RootElement.EnumerateArray())
+                    {
+                        if (el.ValueKind != JsonValueKind.Object) continue;
+                        if (!el.TryGetProperty("Type", out var t) || !t.ValueEquals("Object")) continue;
+                        // name
+                        if (!el.TryGetProperty("Name", out var nameArr) || nameArr.ValueKind != JsonValueKind.Array) continue;
+                        var first = nameArr.EnumerateArray().FirstOrDefault();
+                        if (first.ValueKind != JsonValueKind.String) continue;
+                        var objName = first.GetString();
+                        if (string.IsNullOrWhiteSpace(objName)) continue;
+                        // look for KindOf containing STRUCTURE
+                        if (!el.TryGetProperty("Content", out var content) || content.ValueKind != JsonValueKind.Array) continue;
+                        bool isStructure = false;
+                        foreach (var item in content.EnumerateArray())
+                        {
+                            if (item.ValueKind != JsonValueKind.Object) continue;
+                            if (!item.TryGetProperty("Key", out var keyProp)) continue;
+                            if (!keyProp.ValueEquals("KindOf")) continue;
+                            if (!item.TryGetProperty("Value", out var valArr) || valArr.ValueKind != JsonValueKind.Array) continue;
+                            foreach (var v in valArr.EnumerateArray())
+                            {
+                                if (v.ValueKind == JsonValueKind.String &&
+                                    string.Equals(v.GetString(), "STRUCTURE", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    isStructure = true;
+                                    break;
+                                }
+                            }
+
+                            if (isStructure) break;
+                        }
+
+                        if (isStructure && !detail.AvailableObjects.Contains(objName)) detail.AvailableObjects.Add(objName);
+                    }
+                }
+                catch
+                {
+                    /* ignore unreadable/malformed file */
+                }
+            }
+        }
+
+        if (detail.AvailableSciences.Count == 0)
+        {
+            var sciPath = Path.Combine(projectDataDir, "Science.json");
+            ReadNames(sciPath, "Science", detail.AvailableSciences);
+        }
+    }
+
+    public IReadOnlyList<string> GetPrereqItems(string type)
+    {
+        var d = Model.Detail;
+        if (d is null) return [];
+        return string.Equals(type, "Science", StringComparison.OrdinalIgnoreCase)
+            ? (IReadOnlyList<string>) d.AvailableSciences
+            : (IReadOnlyList<string>) d.AvailableObjects;
     }
 
     private static void PopulateAvailableDirect(string projectDataDir, GameObjectDetailModel detail)
@@ -593,16 +762,23 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
         if (!list.Contains(value)) list.Add(value);
     }
 
-    private void AddPrerequisite(string? value)
+    #endregion
+
+    #region CRUD Actions
+
+    private void AddPrerequisite(string? _)
     {
         if (Model.Detail == null) return;
-        if (string.IsNullOrWhiteSpace(value)) return;
-        if (!Model.Detail.Prerequisites.Contains(value)) Model.Detail.Prerequisites.Add(value);
+        var entry = new PrerequisiteEntryModel { Type = "Object", Value = string.Empty };
+        entry.AttachCatalogs(Model.Detail.AvailableObjects, Model.Detail.AvailableSciences);
+        // Value will be auto-initialized to first available by AttachCatalogs/RebuildItems
+        Model.Detail.PrereqEntries.Add(entry);
     }
 
-    private void RemovePrerequisite(string key)
+    private void RemovePrerequisite(PrerequisiteEntryModel? entry)
     {
-        Model.Detail?.Prerequisites.Remove(key);
+        if (entry is null) return;
+        Model.Detail?.PrereqEntries.Remove(entry);
     }
 
     private void AddKindOf(string? value)
@@ -655,4 +831,6 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
         if (set is null) return;
         Model.Detail?.LocomotorSets.Remove(set);
     }
+
+    #endregion
 }

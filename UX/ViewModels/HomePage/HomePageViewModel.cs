@@ -22,7 +22,7 @@ public class HomePageViewModel(INavigationService navigationService, ILocationSe
         var cfg = locationService.GeneralsEditorConfig;
         if (string.IsNullOrWhiteSpace(cfg.GeneralsPath) || string.IsNullOrWhiteSpace(cfg.ZeroHourPath))
         {
-            var picker = AppMain.App.Services?.GetRequiredService<GeneralsZeroHourEditor.Services.FolderPickerService.IFolderPickerService>();
+            var picker = AppMain.App.Services?.GetRequiredService<Services.FolderPickerService.IFolderPickerService>();
             var generalsDir = picker != null ? await picker.PickGeneralsFolderAsync() ?? string.Empty : string.Empty;
             var zhDir = picker != null ? await picker.PickZeroHourFolderAsync() ?? string.Empty : string.Empty;
 

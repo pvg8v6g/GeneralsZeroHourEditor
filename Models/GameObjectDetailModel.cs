@@ -75,7 +75,8 @@ public class GameObjectDetailModel : BaseModel
         set => SetField(ref field, value);
     }
 
-    public ObservableCollection<string> Prerequisites { get; } = [];
+    // Structured prerequisites (Type = Object/Science, Value = name)
+    public ObservableCollection<PrerequisiteEntryModel> PrereqEntries { get; } = [];
 
     // Flags
     public ObservableCollection<string> KindOf { get; } = [];
@@ -174,6 +175,10 @@ public class GameObjectDetailModel : BaseModel
     public ObservableCollection<string> AvailableWeaponTemplates { get; } = [];
 
     public ObservableCollection<string> AvailableLocomotors { get; } = [];
+
+    // Prerequisite catalogs
+    public ObservableCollection<string> AvailableObjects { get; } = [];
+    public ObservableCollection<string> AvailableSciences { get; } = [];
 
     // Derived / context
     public string? SourceFilePath
