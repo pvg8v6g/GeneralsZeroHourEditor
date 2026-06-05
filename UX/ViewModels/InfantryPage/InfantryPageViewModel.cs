@@ -1,15 +1,15 @@
-﻿using System.Text.Json;
+﻿using System.Collections.ObjectModel;
+using System.Text.Json;
 using GeneralsZeroHourEditor.Command;
 using GeneralsZeroHourEditor.Models;
-using GeneralsZeroHourEditor.Services.LocationService;
+using GeneralsZeroHourEditor.Services.GameDataService;
 using GeneralsZeroHourEditor.Services.GameRegistryService;
-using System.Collections.ObjectModel;
-using System.Collections.Generic;
-using System.Linq;
+using GeneralsZeroHourEditor.Services.LocationService;
 
 namespace GeneralsZeroHourEditor.UX.ViewModels.InfantryPage;
 
-public class InfantryPageViewModel(ILocationService locationService, IGameRegistryService gameRegistryService) : BaseViewModel
+public class InfantryPageViewModel(ILocationService locationService, IGameRegistryService gameRegistryService, IGameDataService gameDataService)
+    : BaseViewModel
 {
     #region Properties
 
@@ -83,10 +83,10 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
     protected override async Task LoadedAction()
     {
         LoadSchema();
-        // Subscribe to registry changes so dropdowns update live
-        gameRegistryService.Registry.Weapons.CollectionChanged += (_, _) => OnRegistriesChanged();
-        gameRegistryService.Registry.Armors.CollectionChanged += (_, _) => OnRegistriesChanged();
-        gameRegistryService.Registry.Locomotors.CollectionChanged += (_, _) => OnRegistriesChanged();
+        // Subscribe to GameDataService catalogs (single source of truth for templates)
+        gameDataService.GameWeapons.CollectionChanged += (_, _) => OnRegistriesChanged();
+        gameDataService.GameArmors.CollectionChanged += (_, _) => OnRegistriesChanged();
+        gameDataService.GameLocomotors.CollectionChanged += (_, _) => OnRegistriesChanged();
 
         LoadTemplateRegistries();
         // Ensure any existing selection (if restored) gets refreshed template lists
@@ -145,19 +145,53 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
 
     private void LoadInfantryList()
     {
+        // If infantry are already preloaded in memory, build from that and exit
         Model.GameObjectGroups.Clear();
+        if (gameDataService.Infantry.Count > 0)
+        {
+            var sideMap = new Dictionary<string, SideGroupModel>(StringComparer.OrdinalIgnoreCase);
+            foreach (var unit in gameDataService.Infantry)
+            {
+                var side = string.IsNullOrWhiteSpace(unit.Side) ? "Unknown" : unit.Side;
+                if (!sideMap.TryGetValue(side, out var group))
+                {
+                    group = new SideGroupModel { Name = side };
+                    sideMap[side] = group;
+                    Model.GameObjectGroups.Add(group);
+                }
+
+                if (group.Children.All(i => i.Name != unit.Name))
+                {
+                    group.Children.Add(new GameObjectItemModel { Name = unit.Name });
+                }
+            }
+
+            // Sort groups and items
+            var sortedGroupsMem = Model.GameObjectGroups.OrderBy(g => g.Name).ToList();
+            Model.GameObjectGroups.Clear();
+            foreach (var group in sortedGroupsMem)
+            {
+                var sortedItems = group.Children.OrderBy(i => i.Name).ToList();
+                group.Children.Clear();
+                foreach (var item in sortedItems) group.Children.Add(item);
+                Model.GameObjectGroups.Add(group);
+            }
+
+            return;
+        }
+
+        // Fallback: legacy direct file scan (will be removed once all pages rely solely on preloaded data)
         if (locationService.ProjectDirectory is null) return;
         var projectDataDir = Path.Combine(locationService.ProjectDirectory, "Data");
         if (!Directory.Exists(projectDataDir)) return;
 
-        var sideMap = new Dictionary<string, SideGroupModel>(StringComparer.OrdinalIgnoreCase);
+        var sideMapFallback = new Dictionary<string, SideGroupModel>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var jsonPath in Directory.EnumerateFiles(projectDataDir, "*.json", SearchOption.AllDirectories))
         {
             try
             {
                 using var stream = File.OpenRead(jsonPath);
-                // Use higher parse depth to match data generation tolerances
                 var parseOptions = new JsonDocumentOptions { MaxDepth = 4096 };
                 using var doc = JsonDocument.Parse(stream, parseOptions);
                 if (doc.RootElement.ValueKind != JsonValueKind.Array) continue;
@@ -173,10 +207,10 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
 
                     var side = GetSide(content) ?? "Unknown";
 
-                    if (!sideMap.TryGetValue(side, out var group))
+                    if (!sideMapFallback.TryGetValue(side, out var group))
                     {
                         group = new SideGroupModel { Name = side };
-                        sideMap[side] = group;
+                        sideMapFallback[side] = group;
                         Model.GameObjectGroups.Add(group);
                     }
 
@@ -192,7 +226,6 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
             }
         }
 
-        // Sort groups and items
         var sortedGroups = Model.GameObjectGroups.OrderBy(g => g.Name).ToList();
         Model.GameObjectGroups.Clear();
         foreach (var group in sortedGroups)
@@ -210,49 +243,10 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
         _weaponTemplates.Clear();
         _locomotors.Clear();
 
-        // Prefer the centralized registry if available (built by GameRegistryService).
-        // IMPORTANT: Do NOT early-return if some catalogs are empty. We merge with fallback scan per-category.
-        foreach (var a in gameRegistryService.Registry.Armors) _armorTemplates.Add(a);
-        foreach (var w in gameRegistryService.Registry.Weapons) _weaponTemplates.Add(w);
-        foreach (var l in gameRegistryService.Registry.Locomotors) _locomotors.Add(l);
-
-        if (locationService.ProjectDirectory is null) return;
-        // Fallback: scan Data JSONs directly for any categories still empty or to catch new items not yet in schema
-        var projectDataDir = Path.Combine(locationService.ProjectDirectory, "Data");
-        if (!Directory.Exists(projectDataDir))
-        {
-            // Still refresh the UI lists from whatever we already have
-            RefreshAvailableLists();
-            return;
-        }
-
-        foreach (var jsonPath in Directory.EnumerateFiles(projectDataDir, "*.json", SearchOption.AllDirectories))
-        {
-            try
-            {
-                using var stream = File.OpenRead(jsonPath);
-                using var doc = JsonDocument.Parse(stream);
-                if (doc.RootElement.ValueKind is not JsonValueKind.Array) continue;
-
-                foreach (var element in doc.RootElement.EnumerateArray().Where(element => element.ValueKind is JsonValueKind.Object))
-                {
-                    if (!element.TryGetProperty("Type", out var typeProp) || typeProp.ValueKind is not JsonValueKind.String) continue;
-                    var type = typeProp.GetString();
-                    if (string.IsNullOrWhiteSpace(type)) continue;
-
-                    var name = GetName(element);
-                    if (string.IsNullOrWhiteSpace(name)) continue;
-
-                    if (string.Equals(type, "Armor", StringComparison.OrdinalIgnoreCase)) _armorTemplates.Add(name);
-                    else if (string.Equals(type, "Weapon", StringComparison.OrdinalIgnoreCase)) _weaponTemplates.Add(name);
-                    else if (string.Equals(type, "Locomotor", StringComparison.OrdinalIgnoreCase)) _locomotors.Add(name);
-                }
-            }
-            catch
-            {
-                /* ignore unreadable file */
-            }
-        }
+        // Source solely from GameDataService (populated once by GameRegistryService.Initialize)
+        foreach (var a in gameDataService.GameArmors) _armorTemplates.Add(a);
+        foreach (var w in gameDataService.GameWeapons) _weaponTemplates.Add(w);
+        foreach (var l in gameDataService.GameLocomotors) _locomotors.Add(l);
 
         RefreshAvailableLists();
     }
@@ -321,6 +315,33 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
 
     private void LoadSelectedDetail(string name)
     {
+        // Prefer preloaded in-memory object
+        var picked = gameDataService.Infantry.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.Ordinal));
+        if (picked is not null)
+        {
+            Model.Detail = picked;
+            // Prime available catalogs for pickers
+            picked.AvailableArmorTemplates.Clear();
+            foreach (var a in gameDataService.GameArmors) picked.AvailableArmorTemplates.Add(a);
+            picked.AvailableWeaponTemplates.Clear();
+            foreach (var w in gameDataService.GameWeapons) picked.AvailableWeaponTemplates.Add(w);
+            picked.AvailableLocomotors.Clear();
+            foreach (var l in gameDataService.GameLocomotors) picked.AvailableLocomotors.Add(l);
+
+            // Also refresh cached sets and push
+            LoadTemplateRegistries();
+            RefreshAvailableLists();
+
+            // Populate prerequisite catalogs (objects/sciences) on demand
+            if (locationService.ProjectDirectory is not null)
+            {
+                var projectDataDir0 = Path.Combine(locationService.ProjectDirectory, "Data");
+                PopulatePrereqCatalogs(projectDataDir0, picked);
+            }
+
+            return;
+        }
+
         if (locationService.ProjectDirectory is null) return;
         var projectDataDir = Path.Combine(locationService.ProjectDirectory, "Data");
         if (!Directory.Exists(projectDataDir)) return;
@@ -346,21 +367,20 @@ public class InfantryPageViewModel(ILocationService locationService, IGameRegist
 
                     // Ensure catalogs are ready BEFORE we parse and materialize content so ComboBoxes have
                     // valid ItemsSource as rows are created and selections apply immediately.
-                    // 1) Prime from central registry directly (deterministic and fast)
+                    // 1) Prime from GameDataService directly (single source of truth)
                     detail.AvailableArmorTemplates.Clear();
-                    foreach (var a in gameRegistryService.Registry.Armors) detail.AvailableArmorTemplates.Add(a);
+                    foreach (var a in gameDataService.GameArmors) detail.AvailableArmorTemplates.Add(a);
                     detail.AvailableWeaponTemplates.Clear();
-                    foreach (var w in gameRegistryService.Registry.Weapons) detail.AvailableWeaponTemplates.Add(w);
+                    foreach (var w in gameDataService.GameWeapons) detail.AvailableWeaponTemplates.Add(w);
                     detail.AvailableLocomotors.Clear();
-                    foreach (var l in gameRegistryService.Registry.Locomotors) detail.AvailableLocomotors.Add(l);
+                    foreach (var l in gameDataService.GameLocomotors) detail.AvailableLocomotors.Add(l);
 
                     // 2) Also refresh cached registries and push, in case schema was not yet initialized
-                    LoadTemplateRegistries(); // refresh cached sets from schema/Data
+                    LoadTemplateRegistries(); // refresh cached sets from GameDataService
                     RefreshAvailableLists(); // push cached sets into current detail (merges with step 1)
 
-                    // 3) Fallback scanning of project Data for any names missing from registry (robustness)
-                    PopulateAvailableDirect(projectDataDir, detail);
-                    PopulatePrereqCatalogs(projectDataDir, detail); // objects/sciences catalogs
+                    // 3) Populate other prerequisite catalogs (objects/sciences)
+                    PopulatePrereqCatalogs(projectDataDir, detail);
 
                     // Iterate content array of key/value pairs and block items and fill detail where relevant
                     foreach (var item in content.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.Object))

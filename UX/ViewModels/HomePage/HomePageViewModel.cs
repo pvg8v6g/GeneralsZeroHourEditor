@@ -1,4 +1,7 @@
-﻿using GeneralsZeroHourEditor.Services.LocationService;
+﻿using GeneralsZeroHourEditor.AppMain;
+using GeneralsZeroHourEditor.Models;
+using GeneralsZeroHourEditor.Services.FolderPickerService;
+using GeneralsZeroHourEditor.Services.LocationService;
 using GeneralsZeroHourEditor.Services.NavigationService;
 using GeneralsZeroHourEditor.Tasks;
 using GeneralsZeroHourEditor.UX.Views.TopBar;
@@ -22,13 +25,13 @@ public class HomePageViewModel(INavigationService navigationService, ILocationSe
         var cfg = locationService.GeneralsEditorConfig;
         if (string.IsNullOrWhiteSpace(cfg.GeneralsPath) || string.IsNullOrWhiteSpace(cfg.ZeroHourPath))
         {
-            var picker = AppMain.App.Services?.GetRequiredService<Services.FolderPickerService.IFolderPickerService>();
+            var picker = App.Services?.GetRequiredService<IFolderPickerService>();
             var generalsDir = picker != null ? await picker.PickGeneralsFolderAsync() ?? string.Empty : string.Empty;
             var zhDir = picker != null ? await picker.PickZeroHourFolderAsync() ?? string.Empty : string.Empty;
 
             if (!string.IsNullOrWhiteSpace(generalsDir) && !string.IsNullOrWhiteSpace(zhDir))
             {
-                var newCfg = new Models.GeneralsEditorConfig
+                var newCfg = new GeneralsEditorConfig
                 {
                     Location = cfg.Location,
                     GeneralsPath = generalsDir,
@@ -39,7 +42,7 @@ public class HomePageViewModel(INavigationService navigationService, ILocationSe
             }
             else
             {
-                // User cancelled or invalid; skip heavy loading.
+                // User canceled or invalid; skip heavy loading.
                 return;
             }
         }

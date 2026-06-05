@@ -1,10 +1,11 @@
 ﻿using System.Text.Json;
 using GeneralsZeroHourEditor.Models.Schema;
 using GeneralsZeroHourEditor.Services.DataService;
+using GeneralsZeroHourEditor.Services.GameDataService;
 
 namespace GeneralsZeroHourEditor.Services.GameRegistryService;
 
-public class GameRegistryService(IDataService dataService) : IGameRegistryService
+public class GameRegistryService(IDataService dataService, IGameDataService gameDataService) : IGameRegistryService
 {
     public GameRegistryModel Registry { get; } = new();
 
@@ -14,11 +15,30 @@ public class GameRegistryService(IDataService dataService) : IGameRegistryServic
     {
         if (string.IsNullOrWhiteSpace(projectDataDir) || !Directory.Exists(projectDataDir)) return;
 
-        // 1. Collect Catalogs
-        PopulateCatalog(Registry.Weapons, dataService.CollectTopLevelNames(projectDataDir, "Weapon"));
-        PopulateCatalog(Registry.Armors, dataService.CollectTopLevelNames(projectDataDir, "Armor"));
-        PopulateCatalog(Registry.FXLists, dataService.CollectTopLevelNames(projectDataDir, "FXList"));
-        PopulateCatalog(Registry.Locomotors, dataService.CollectTopLevelNames(projectDataDir, "Locomotor"));
+        // 1. Collect and cache catalogs in GameDataService (load once)
+        //    Populate central, long-lived collections if they are not yet loaded.
+
+        if (gameDataService.GameWeapons.Count == 0)
+        {
+            PopulateCatalog(gameDataService.GameWeapons, dataService.CollectTopLevelNames(projectDataDir, "Weapon"));
+        }
+
+        if (gameDataService.GameArmors.Count == 0)
+        {
+            PopulateCatalog(gameDataService.GameArmors, dataService.CollectTopLevelNames(projectDataDir, "Armor"));
+        }
+
+        if (gameDataService.FXLists.Count == 0)
+        {
+            PopulateCatalog(gameDataService.FXLists, dataService.CollectTopLevelNames(projectDataDir, "FXList"));
+        }
+
+        if (gameDataService.GameLocomotors.Count == 0)
+        {
+            PopulateCatalog(gameDataService.GameLocomotors, dataService.CollectTopLevelNames(projectDataDir, "Locomotor"));
+        }
+
+        //    No longer mirror into Registry (catalogs now live solely in GameDataService)
 
         // 2. Mine Modules and Fields (Generic Schema Mining)
         MineSchema(projectDataDir);
@@ -136,18 +156,6 @@ public class GameRegistryService(IDataService dataService) : IGameRegistryServic
         var json = File.ReadAllText(schemaPath);
         var loaded = JsonSerializer.Deserialize<GameRegistryModel>(json);
         if (loaded == null) return;
-
-        Registry.Weapons.Clear();
-        foreach (var item in loaded.Weapons) Registry.Weapons.Add(item);
-
-        Registry.Armors.Clear();
-        foreach (var item in loaded.Armors) Registry.Armors.Add(item);
-
-        Registry.FXLists.Clear();
-        foreach (var item in loaded.FXLists) Registry.FXLists.Add(item);
-
-        Registry.Locomotors.Clear();
-        foreach (var item in loaded.Locomotors) Registry.Locomotors.Add(item);
 
         Registry.ModuleDefinitions.Clear();
         foreach (var item in loaded.ModuleDefinitions) Registry.ModuleDefinitions.Add(item);

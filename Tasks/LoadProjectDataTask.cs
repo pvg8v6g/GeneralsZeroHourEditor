@@ -1,26 +1,71 @@
-﻿using GeneralsZeroHourEditor.Services.DataService;
+﻿using GeneralsZeroHourEditor.Extensions;
+using GeneralsZeroHourEditor.Services.DataService;
+using GeneralsZeroHourEditor.Services.GameDataService;
+using GeneralsZeroHourEditor.Services.GameRegistryService;
 using GeneralsZeroHourEditor.Services.JsonService;
+using GeneralsZeroHourEditor.Services.LocationService;
 
 namespace GeneralsZeroHourEditor.Tasks;
 
-public class LoadProjectDataTask(IDataService dataService, IJsonService jsonService) : EngineTask
+public class LoadProjectDataTask(
+    IDataService dataService,
+    IJsonService jsonService,
+    ILocationService locationService,
+    IGameRegistryService gameRegistryService,
+    IGameDataService gameDataService) : EngineTask
 {
     public override async Task Call()
     {
-        MaxWork = 2;
+        MaxWork = GetWorkLoad();
         await DoWork();
         Work = MaxWork;
     }
 
+    private int GetWorkLoad()
+    {
+        return 8;
+    }
+
     private async Task DoWork()
     {
-        // dataService.ObjectModels = await jsonService.LoadFromJson<ObjectModel>("ObjectModels.json");
-        // Work++;
-        // dataService.ArmorModels = await jsonService.LoadFromJson<Armor>("ArmorModels.json");
-        // Work++;
-        // dataService.LocomotorModels = await jsonService.LoadFromJson<Locomotor>("LocomotorModels.json");
-        // Work++;
-        // dataService.LocomotorValues = await jsonService.LoadFromJson<LocomotorValues>("LocomotorValues.json");
-        // Work++;
+        // 1) Load schema and catalogs
+        var projectDir = locationService.ProjectDirectory;
+        if (projectDir is null) return;
+        var schemaPath = Path.Combine(projectDir, "Schema", "game.schema.json");
+        var dataDir = Path.Combine(projectDir, "Data");
+        Directory.CreateDirectory(dataDir);
+
+        if (File.Exists(schemaPath))
+        {
+            gameRegistryService.LoadFromSchema(schemaPath);
+            Work++;
+            // Ensure changeable catalogs are populated too (they live in GameDataService)
+            gameDataService.GameWeapons.SetRange(dataService.CollectTopLevelNames(dataDir, "Weapon"));
+            Work++;
+            gameDataService.GameArmors.SetRange(dataService.CollectTopLevelNames(dataDir, "Armor"));
+            Work++;
+            gameDataService.GameLocomotors.SetRange(dataService.CollectTopLevelNames(dataDir, "Locomotor"));
+            Work++;
+            gameDataService.FXLists.SetRange(dataService.CollectTopLevelNames(dataDir, "FXList"));
+            Work++;
+        }
+        else
+        {
+            gameRegistryService.Initialize(dataDir);
+            Work++;
+            // Optional: persist mined schema for faster subsequent loads
+            Directory.CreateDirectory(Path.GetDirectoryName(schemaPath)!);
+            gameRegistryService.SaveSchema(schemaPath);
+            Work++;
+        }
+
+        // 2) Preload Infantry objects fully into memory (delegated to JsonService)
+        var infantry = (await jsonService.LoadInfantryAsync(dataDir)).OrderBy(u => u.Name).ToList();
+        gameDataService.Infantry.SetRange(infantry);
+        Work++;
+
+        // 3) Placeholders for Vehicles/Structures (future parsing)
+        // They remain empty until parsing is implemented.
+        await Task.CompletedTask;
     }
 }

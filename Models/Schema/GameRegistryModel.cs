@@ -5,11 +5,6 @@ namespace GeneralsZeroHourEditor.Models.Schema;
 
 public class GameRegistryModel : BaseModel
 {
-    public ObservableCollection<string> Weapons { get; } = [];
-    public ObservableCollection<string> Armors { get; } = [];
-    public ObservableCollection<string> FXLists { get; } = [];
-    public ObservableCollection<string> Locomotors { get; } = [];
-
     public ObservableCollection<ModuleDefinitionModel> ModuleDefinitions { get; } = [];
 }
 
