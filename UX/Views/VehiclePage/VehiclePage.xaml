@@ -7,41 +7,41 @@
       xmlns:models="using:GeneralsZeroHourEditor.Models"
       mc:Ignorable="d"
       behaviors:LoadedBehavior.LoadedCommand="{x:Bind ViewModel.LoadedCommand}">
-  <Grid ColumnSpacing="10" Padding="5">
-    <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="350" />
-      <ColumnDefinition Width="*" />
-    </Grid.ColumnDefinitions>
-
-    <!-- Left: Vehicle list -->
-    <Border Grid.Column="0"
-            Background="{StaticResource SecondaryBrush}"
-            Padding="8"
-            CornerRadius="6">
-      <Grid RowSpacing="6">
-        <Grid.RowDefinitions>
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0"
-                   Text="Vehicle"
-                   FontWeight="Bold"
-                   Foreground="{StaticResource WhiteBrush}" />
-        <TreeView Grid.Row="1"
-                  ItemsSource="{x:Bind ViewModel.Model.GameObjectGroups, Mode=OneWay}"
-                  behaviors:TreeViewBehavior.ItemInvokedCommand="{x:Bind ViewModel.ItemInvokedCommand}">
-          <TreeView.ItemTemplate>
-            <DataTemplate x:DataType="models:GameObjectNodeModel">
-              <TreeViewItem ItemsSource="{x:Bind Children, Mode=OneWay}">
-                <TextBlock Text="{x:Bind Name, Mode=OneWay}" />
-              </TreeViewItem>
-            </DataTemplate>
-          </TreeView.ItemTemplate>
-        </TreeView>
-      </Grid>
-    </Border>
-
-    <ScrollViewer Grid.Column="1"
-                  VerticalScrollBarVisibility="Auto" />
-  </Grid>
+  <!-- <Grid ColumnSpacing="10" Padding="5"> -->
+  <!--   <Grid.ColumnDefinitions> -->
+  <!--     <ColumnDefinition Width="350" /> -->
+  <!--     <ColumnDefinition Width="*" /> -->
+  <!--   </Grid.ColumnDefinitions> -->
+  <!-- -->
+  <!--   ~1~ Left: Vehicle list @1@ -->
+  <!--   <Border Grid.Column="0" -->
+  <!--           Background="{StaticResource SecondaryBrush}" -->
+  <!--           Padding="8" -->
+  <!--           CornerRadius="6"> -->
+  <!--     <Grid RowSpacing="6"> -->
+  <!--       <Grid.RowDefinitions> -->
+  <!--         <RowDefinition Height="Auto" /> -->
+  <!--         <RowDefinition Height="*" /> -->
+  <!--       </Grid.RowDefinitions> -->
+  <!--       <TextBlock Grid.Row="0" -->
+  <!--                  Text="Vehicle" -->
+  <!--                  FontWeight="Bold" -->
+  <!--                  Foreground="{StaticResource WhiteBrush}" /> -->
+  <!--       <TreeView Grid.Row="1" -->
+  <!--                 ItemsSource="{x:Bind ViewModel.Model.GameObjectGroups, Mode=OneWay}" -->
+  <!--                 behaviors:TreeViewBehavior.ItemInvokedCommand="{x:Bind ViewModel.ItemInvokedCommand}"> -->
+  <!--         <TreeView.ItemTemplate> -->
+  <!--           <DataTemplate x:DataType="models:GameObjectNodeModel"> -->
+  <!--             <TreeViewItem ItemsSource="{x:Bind Children, Mode=OneWay}"> -->
+  <!--               <TextBlock Text="{x:Bind Name, Mode=OneWay}" /> -->
+  <!--             </TreeViewItem> -->
+  <!--           </DataTemplate> -->
+  <!--         </TreeView.ItemTemplate> -->
+  <!--       </TreeView> -->
+  <!--     </Grid> -->
+  <!--   </Border> -->
+  <!-- -->
+  <!--   <ScrollViewer Grid.Column="1" -->
+  <!--                 VerticalScrollBarVisibility="Auto" /> -->
+  <!-- </Grid> -->
 </Page>

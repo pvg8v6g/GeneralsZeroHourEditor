@@ -47,16 +47,8 @@ public class HomePageViewModel(INavigationService navigationService, ILocationSe
             }
         }
 
-        if (locationService.CreateProjectDirectory())
-        {
-            await NavigationService.ShowProgressPopup<InitialLoadDataTask>("Loading Game Files");
-            await NavigationService.ShowProgressPopup<SaveProjectDataTask>("Saving Project Files");
-        }
-        else
-        {
-            await NavigationService.ShowProgressPopup<LoadProjectDataTask>("Loading Project Files");
-        }
-
+        if (locationService.CreateProjectDirectory()) await NavigationService.ShowProgressPopup<InitialLoadDataTask>("Loading Game Files");
+        await NavigationService.ShowProgressPopup<LoadProjectDataTask>("Loading Project Files");
         NavigationService.SetTopBar<TopBarPage>();
         NavigationService.NavigateTo<Views.InfantryPage.InfantryPage>();
     }

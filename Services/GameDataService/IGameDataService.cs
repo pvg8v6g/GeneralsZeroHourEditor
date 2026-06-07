@@ -18,9 +18,9 @@ public interface IGameDataService
     public ObservableCollection<string> FXLists { get; }
 
     // Preloaded game objects by category (full objects kept in memory)
-    public ObservableCollection<GameObjectDetailModel> Infantry { get; }
+    public ObservableCollection<GameObjectModel> Infantry { get; }
 
-    public ObservableCollection<GameObjectDetailModel> Vehicles { get; }
+    public ObservableCollection<GameObjectModel> Vehicles { get; }
 
-    public ObservableCollection<GameObjectDetailModel> Structures { get; }
+    public ObservableCollection<GameObjectModel> Structures { get; }
 }

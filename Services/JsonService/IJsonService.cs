@@ -7,5 +7,5 @@ public interface IJsonService
     Task SaveToFileAsync(string filePath, string jsonContent);
 
     // High-level loaders for project data (clean, page-agnostic)
-    Task<IReadOnlyList<GameObjectDetailModel>> LoadInfantryAsync(string dataDir);
+    Task<IReadOnlyList<GameObjectModel>> LoadInfantryAsync(string dataDir);
 }

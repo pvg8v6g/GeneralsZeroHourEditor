@@ -1,29 +1,11 @@
-﻿namespace GeneralsZeroHourEditor.Models;
+﻿using System.Collections.ObjectModel;
+using GeneralsZeroHourEditor.Enumerations;
 
-public class WeaponSetModel : BaseModel
+namespace GeneralsZeroHourEditor.Models;
+
+public class WeaponSlotModel : BaseModel
 {
-    // Comma-separated list of condition tokens controlling this set
-    public string ConditionsCsv
-    {
-        get;
-        set => SetField(ref field, value);
-    }
+    public ObservableCollection<WeaponConditions> Conditions { get; } = [];
 
-    public string Primary
-    {
-        get;
-        set => SetField(ref field, value);
-    }
-
-    public string Secondary
-    {
-        get;
-        set => SetField(ref field, value);
-    }
-
-    public string Tertiary
-    {
-        get;
-        set => SetField(ref field, value);
-    }
+    public ObservableCollection<KeyValuePair<WeaponSlot, string>> Weapons { get; } = [];
 }

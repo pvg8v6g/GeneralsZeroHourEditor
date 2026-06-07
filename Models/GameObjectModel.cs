@@ -1,10 +1,12 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
+using GeneralsZeroHourEditor.Enumerations;
 
 namespace GeneralsZeroHourEditor.Models;
 
-public class GameObjectDetailModel : BaseModel
+public class GameObjectModel : BaseModel
 {
-    // Identity / Metadata
+    #region Metadata
+
     public string Name
     {
         get;
@@ -76,10 +78,53 @@ public class GameObjectDetailModel : BaseModel
     }
 
     // Structured prerequisites (Type = Object/Science, Value = name)
-    public ObservableCollection<PrerequisiteEntryModel> PrereqEntries { get; } = [];
+    public ObservableCollection<KeyValuePair<PrerequisiteType, string>> PrereqEntries { get; } = [];
 
     // Flags
-    public ObservableCollection<string> KindOf { get; } = [];
+    public ObservableCollection<KindOf> KindOf { get; } = [];
+
+    #endregion
+
+    #region Visuals (W3D)
+
+    #endregion
+
+    #region Armor & Health
+
+    // Armor & Health
+    public string MaxHealth
+    {
+        get;
+        set => SetField(ref field, value);
+    }
+
+    public string InitialHealth
+    {
+        get;
+        set => SetField(ref field, value);
+    }
+
+    public ObservableCollection<ArmorSetModel> ArmorSets { get; } = [];
+
+    #endregion
+
+    #region Weapons
+
+    public ObservableCollection<WeaponSlotModel> WeaponSets { get; } = [];
+
+    #endregion
+
+    #region Behaviors / Modules
+
+    #endregion
+
+    #region Movement
+
+    public ObservableCollection<KeyValuePair<LocomotorConditions, string>> LocomotorSets { get; } = [];
+
+    #endregion
+
+    #region Vision & Shroud
 
     // Vision & Shroud
     public string VisionRange
@@ -94,7 +139,10 @@ public class GameObjectDetailModel : BaseModel
         set => SetField(ref field, value);
     }
 
-    // Geometry & Shadow
+    #endregion
+
+    #region Geometry & Shadow
+
     public string Geometry
     {
         get;
@@ -149,41 +197,13 @@ public class GameObjectDetailModel : BaseModel
         set => SetField(ref field, value);
     }
 
-    // Armor & Health
-    public string MaxHealth
-    {
-        get;
-        set => SetField(ref field, value);
-    }
+    #endregion
 
-    public string InitialHealth
-    {
-        get;
-        set => SetField(ref field, value);
-    }
+    #region Audio & FX
 
-    public ObservableCollection<ArmorSetModel> ArmorSets { get; } = [];
+    #endregion
 
-    // Weapons
-    public ObservableCollection<WeaponSetModel> WeaponSets { get; } = [];
+    #region Flags & Classification
 
-    public ObservableCollection<LocomotorSetModel> LocomotorSets { get; } = [];
-
-    // Available templates (populated from project JSON registries)
-    public ObservableCollection<string> AvailableArmorTemplates { get; } = [];
-
-    public ObservableCollection<string> AvailableWeaponTemplates { get; } = [];
-
-    public ObservableCollection<string> AvailableLocomotors { get; } = [];
-
-    // Prerequisite catalogs
-    public ObservableCollection<string> AvailableObjects { get; } = [];
-    public ObservableCollection<string> AvailableSciences { get; } = [];
-
-    // Derived / context
-    public string? SourceFilePath
-    {
-        get;
-        set => SetField(ref field, value);
-    }
+    #endregion
 }

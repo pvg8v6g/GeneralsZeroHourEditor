@@ -122,7 +122,7 @@ public class InitialLoadDataTask(
 
             foreach (var p in zhPaths)
             {
-                if (p.Contains("DataINI/", StringComparison.OrdinalIgnoreCase)) allPaths.Add(p);
+                if (p.Contains("Data/INI/", StringComparison.OrdinalIgnoreCase)) allPaths.Add(p);
             }
 
             // Fallback: include any .ini if none were under Data/INI/
