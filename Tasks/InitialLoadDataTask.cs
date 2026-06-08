@@ -114,6 +114,10 @@ public class InitialLoadDataTask(
             // Collect union of INI entry paths from both indices, prefer paths under Data/INI/
             var genPaths = genIndex.EnumerateEntries(".ini").Select(e => e.Path).ToArray();
             var zhPaths = zhIndex.EnumerateEntries(".ini").Select(e => e.Path).ToArray();
+
+            // Pre-scan Zero Hour to collect all top-level Object names across all files.
+            // We will drop Generals objects with the same names even if they live in different files.
+            var zhObjectNames = CollectZeroHourObjectNames(zhIndex);
             var allPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var p in genPaths)
             {
@@ -145,9 +149,11 @@ public class InitialLoadDataTask(
                     case false when !string.IsNullOrWhiteSpace(genText):
                     {
                         // Merge at top-level object/module granularity: ZH overrides same-named blocks; Generals fills gaps
+                        // Additionally, strip any Generals Object blocks that are duplicated in ZH but live in different files.
                         var zhJson = dataService.ParseIniContentToJson(zhText!);
                         var genJson = dataService.ParseIniContentToJson(genText);
-                        mergedJson = MergeTopLevelBlocks(genJson, zhJson); // ZH wins on duplicates
+                        var filteredGenJson = FilterGeneralsObjectsDuplicatedInZH(genJson, zhObjectNames);
+                        mergedJson = MergeTopLevelBlocks(filteredGenJson, zhJson); // ZH wins on duplicates
                         break;
                     }
                     case false:
@@ -157,7 +163,9 @@ public class InitialLoadDataTask(
                     {
                         if (!string.IsNullOrWhiteSpace(genText))
                         {
-                            mergedJson = dataService.ParseIniContentToJson(genText);
+                            // Generals-only file: remove any Object blocks that have a ZH counterpart anywhere.
+                            var genJsonOnly = dataService.ParseIniContentToJson(genText);
+                            mergedJson = FilterGeneralsObjectsDuplicatedInZH(genJsonOnly, zhObjectNames);
                         }
                         else
                         {
@@ -262,6 +270,94 @@ public class InitialLoadDataTask(
             if (string.IsNullOrEmpty(name)) return null;
             return type + "::" + name;
         }
+    }
+
+    private static string FilterGeneralsObjectsDuplicatedInZH(string generalsJson, HashSet<string> zhObjectNames)
+    {
+        // Fast path
+        if (string.IsNullOrWhiteSpace(generalsJson) || zhObjectNames.Count == 0) return generalsJson;
+
+        var parseOptions = new JsonDocumentOptions { MaxDepth = 4096 };
+        using var genDoc = JsonDocument.Parse(generalsJson, parseOptions);
+        if (genDoc.RootElement.ValueKind != JsonValueKind.Array) return generalsJson;
+
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        {
+            writer.WriteStartArray();
+            foreach (var el in genDoc.RootElement.EnumerateArray())
+            {
+                // Keep non-objects and any object not duplicated in ZH
+                if (el.ValueKind != JsonValueKind.Object)
+                {
+                    el.WriteTo(writer);
+                    continue;
+                }
+
+                if (!el.TryGetProperty("Type", out var typeProp) || !typeProp.ValueEquals("Object"))
+                {
+                    el.WriteTo(writer);
+                    continue;
+                }
+
+                if (!el.TryGetProperty("Name", out var nameArr) || nameArr.ValueKind != JsonValueKind.Array)
+                {
+                    el.WriteTo(writer);
+                    continue;
+                }
+
+                var first = nameArr.EnumerateArray().FirstOrDefault();
+                var name = first.ValueKind == JsonValueKind.String ? first.GetString() : null;
+
+                if (name is not null && zhObjectNames.Contains(name))
+                {
+                    // Skip Generals object because a Zero Hour object with the same name exists elsewhere.
+                    continue;
+                }
+
+                el.WriteTo(writer);
+            }
+
+            writer.WriteEndArray();
+        }
+
+        return Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+    private HashSet<string> CollectZeroHourObjectNames(BigArchiveService zhIndex)
+    {
+        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var parseOptions = new JsonDocumentOptions { MaxDepth = 4096 };
+
+        foreach (var entry in zhIndex.EnumerateEntries(".ini"))
+        {
+            var text = zhIndex.TryReadText(entry.Path);
+            if (string.IsNullOrWhiteSpace(text)) continue;
+
+            var json = dataService.ParseIniContentToJson(text!);
+
+            try
+            {
+                using var doc = JsonDocument.Parse(string.IsNullOrWhiteSpace(json) ? "[]" : json, parseOptions);
+                if (doc.RootElement.ValueKind != JsonValueKind.Array) continue;
+                foreach (var el in doc.RootElement.EnumerateArray())
+                {
+                    if (el.ValueKind != JsonValueKind.Object) continue;
+                    if (!el.TryGetProperty("Type", out var tProp) || !tProp.ValueEquals("Object")) continue;
+                    if (!el.TryGetProperty("Name", out var nArr) || nArr.ValueKind != JsonValueKind.Array) continue;
+                    var first = nArr.EnumerateArray().FirstOrDefault();
+                    if (first.ValueKind != JsonValueKind.String) continue;
+                    var name = first.GetString();
+                    if (!string.IsNullOrWhiteSpace(name)) set.Add(name);
+                }
+            }
+            catch
+            {
+                // ignore bad files
+            }
+        }
+
+        return set;
     }
 
     #endregion

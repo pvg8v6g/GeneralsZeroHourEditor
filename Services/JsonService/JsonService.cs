@@ -187,6 +187,36 @@ public class JsonService : IJsonService
                 if (sub.ValueKind is not JsonValueKind.Object) continue;
                 if (!sub.TryGetProperty("Key", out var sk) || !sub.TryGetProperty("Value", out var sv) ||
                     sv.ValueKind is not JsonValueKind.Array) continue;
+                var key = sk.GetString() ?? string.Empty;
+                switch (key)
+                {
+                    case var _ when key.Equals("Armor", StringComparison.OrdinalIgnoreCase):
+                    {
+                        model.Armor = sv.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
+                        break;
+                    }
+                    case var _ when key.Equals("Conditions", StringComparison.OrdinalIgnoreCase):
+                    {
+                        var parsed = sv
+                            .EnumerateArray()
+                            .Where(n => n.ValueKind is JsonValueKind.String)
+                            .Select(n => n.GetString())
+                            .OfType<string>()
+                            .Select(s => Enum.TryParse<ArmorConditions>(s, ignoreCase: true, out var v) ? (ArmorConditions?) v : null)
+                            .OfType<ArmorConditions>()
+                            .ToArray();
+
+                        model.Conditions.SetRange(parsed);
+                        break;
+                    }
+                    case var _ when key.Equals("DamageFX", StringComparison.OrdinalIgnoreCase):
+                    {
+                        model.DamageFX = sv.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
+                        break;
+                    }
+                }
+
+
                 var sKey = sk.GetString();
                 if (string.Equals(sKey, "Armor", StringComparison.OrdinalIgnoreCase))
                 {
@@ -243,7 +273,7 @@ public class JsonService : IJsonService
                         model.Conditions.SetRange(parsed);
                         break;
                     }
-                    default:
+                    case var _ when key.Equals("Weapon", StringComparison.OrdinalIgnoreCase):
                     {
                         var slot = key.ToUpperInvariant() switch
                         {
@@ -258,6 +288,31 @@ public class JsonService : IJsonService
                         model.Weapons.Add(new KeyValuePair<WeaponSlot, string>(slot.Value, weapon));
                         break;
                     }
+                    case var _ when key.Equals("AutoChooseSources", StringComparison.OrdinalIgnoreCase):
+                    {
+                        var line = sv.EnumerateArray()
+                            .Where(n => n.ValueKind is JsonValueKind.String)
+                            .Select(n => n.GetString())
+                            .Where(x => x is not null)
+                            .Cast<string>()
+                            .ToArray();
+                        var slotParse = Enum.TryParse<WeaponSlot>(line[0], ignoreCase: true, out var slot);
+                        if (!slotParse) break;
+                        var sources = line
+                            .Select(s => Enum.TryParse<AutoChooseSources>(s, ignoreCase: true, out var v) ? (AutoChooseSources?) v : null)
+                            .OfType<AutoChooseSources>()
+                            .ToArray();
+                        model.AutoChooseSources.Add(new KeyValuePair<WeaponSlot, AutoChooseSources[]>(slot, sources));
+                        break;
+                    }
+                    case var _ when key.Equals("WeaponLockSharedAcrossSets", StringComparison.OrdinalIgnoreCase):
+                    {
+                        var sharedString = sv.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
+                        var sharedParse = Enum.TryParse<WeaponLockSharedAcrossSets>(sharedString, ignoreCase: true, out var shared);
+                        if (!sharedParse) break;
+                        model.WeaponLockSharedAcrossSets = shared;
+                        break;
+                    }
                 }
             }
 
@@ -270,37 +325,22 @@ public class JsonService : IJsonService
         foreach (var item in content.EnumerateArray())
         {
             if (item.ValueKind is not JsonValueKind.Object) continue;
-            if (!item.TryGetProperty("Type", out var blockTypeProp) || !item.TryGetProperty("Content", out var blockContent) ||
-                blockContent.ValueKind is not JsonValueKind.Array) continue;
-            if (!string.Equals(blockTypeProp.GetString(), "Locomotor", StringComparison.OrdinalIgnoreCase)) continue;
+            if (!item.TryGetProperty("Key", out var sk) || !item.TryGetProperty("Value", out var sv) ||
+                sv.ValueKind is not JsonValueKind.Array) continue;
+            var key = sk.GetString() ?? string.Empty;
+            if (!string.Equals(key, "Locomotor", StringComparison.OrdinalIgnoreCase)) continue;
 
-            var condition = LocomotorConditions.SET_NORMAL;
-            var locomotor = string.Empty;
-            foreach (var sub in blockContent.EnumerateArray())
-            {
-                if (sub.ValueKind is not JsonValueKind.Object) continue;
-                if (!sub.TryGetProperty("Key", out var sk) || !sub.TryGetProperty("Value", out var sv) ||
-                    sv.ValueKind is not JsonValueKind.Array) continue;
-                var sKey = sk.GetString();
-                if (string.Equals(sKey, "Locomotor", StringComparison.OrdinalIgnoreCase))
-                {
-                    locomotor = sv.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
-                }
-                else if (string.Equals(sKey, "Condition", StringComparison.OrdinalIgnoreCase) ||
-                         string.Equals(sKey, "Conditions", StringComparison.OrdinalIgnoreCase))
-                {
-                    var parsed = sv.EnumerateArray()
-                        .Where(n => n.ValueKind is JsonValueKind.String)
-                        .Select(n => n.GetString())
-                        .OfType<string>()
-                        .Select(s => Enum.TryParse<LocomotorConditions>(s, ignoreCase: true, out var v) ? (LocomotorConditions?) v : null)
-                        .OfType<LocomotorConditions>()
-                        .ToArray();
+            var line = sv.EnumerateArray()
+                .Select(x => x.GetString())
+                .Where(x => x is not null)
+                .Cast<string>()
+                .ToArray();
 
-                    if (parsed.Length is 0) continue;
-                    condition = parsed.First();
-                }
-            }
+            var conditionParse = Enum.TryParse<LocomotorConditions>(line[0], ignoreCase: true, out var condition);
+            if (!conditionParse) continue;
+
+            var locomotor = line[1];
+            if (string.IsNullOrEmpty(locomotor)) continue;
 
             detail.LocomotorSets.Add(new KeyValuePair<LocomotorConditions, string>(condition, locomotor));
         }

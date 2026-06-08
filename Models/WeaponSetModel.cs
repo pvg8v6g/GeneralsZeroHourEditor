@@ -8,4 +8,12 @@ public class WeaponSlotModel : BaseModel
     public ObservableCollection<WeaponConditions> Conditions { get; } = [];
 
     public ObservableCollection<KeyValuePair<WeaponSlot, string>> Weapons { get; } = [];
+
+    public ObservableCollection<KeyValuePair<WeaponSlot, AutoChooseSources[]>> AutoChooseSources { get; } = [];
+
+    public WeaponLockSharedAcrossSets WeaponLockSharedAcrossSets
+    {
+        get;
+        set => SetField(ref field, value);
+    } = WeaponLockSharedAcrossSets.No;
 }

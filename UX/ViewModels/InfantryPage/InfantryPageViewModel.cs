@@ -61,7 +61,6 @@ public class InfantryPageViewModel(
         if (selectedItem is not TreeViewModel item) return;
         if (item.GameObject is null) return;
         SelectedItem = item.GameObject;
-        var t0 = 0;
         // if (invokedItem is not GameObjectItemModel item) return;
         // Model.SelectedNode = item;
         // LoadSelectedDetail(item.Name);
