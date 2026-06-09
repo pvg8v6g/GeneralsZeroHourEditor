@@ -8,4 +8,8 @@ public interface IJsonService
 
     // High-level loaders for project data (clean, page-agnostic)
     Task<IReadOnlyList<GameObjectModel>> LoadInfantryAsync(string dataDir);
+
+    Task<IReadOnlyList<GameObjectModel>> LoadVehiclesAsync(string dataDir);
+
+    Task<IReadOnlyList<GameObjectModel>> LoadStructuresAsync(string dataDir);
 }

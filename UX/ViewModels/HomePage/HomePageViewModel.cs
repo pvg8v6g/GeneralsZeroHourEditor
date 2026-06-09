@@ -1,6 +1,7 @@
 ﻿using GeneralsZeroHourEditor.AppMain;
 using GeneralsZeroHourEditor.Models;
 using GeneralsZeroHourEditor.Services.FolderPickerService;
+using GeneralsZeroHourEditor.Services.GameDataService;
 using GeneralsZeroHourEditor.Services.LocationService;
 using GeneralsZeroHourEditor.Services.NavigationService;
 using GeneralsZeroHourEditor.Tasks;
@@ -9,11 +10,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GeneralsZeroHourEditor.UX.ViewModels.HomePage;
 
-public class HomePageViewModel(INavigationService navigationService, ILocationService locationService) : BaseViewModel
+public class HomePageViewModel(INavigationService navigationService, ILocationService locationService, IGameDataService gameDataService)
+    : BaseViewModel
 {
     #region Properties
 
     public INavigationService NavigationService => navigationService;
+
+    public IGameDataService GameDataService => gameDataService;
 
     #endregion
 

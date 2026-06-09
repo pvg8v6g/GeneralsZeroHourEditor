@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 
 namespace GeneralsZeroHourEditor.Extensions;
 
@@ -7,6 +8,7 @@ namespace GeneralsZeroHourEditor.Extensions;
 /// These helpers provide convenient bulk operations commonly needed in MVVM scenarios
 /// where <see cref="ObservableCollection{T}"/> is used for UI-bound collections.
 /// </summary>
+[SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
 public static partial class Extensions
 {
     #region ObservableCollection extensions
@@ -26,7 +28,7 @@ public static partial class Extensions
     /// </remarks>
     public static void AddRange<T>(this ObservableCollection<T> collection, IEnumerable<T> items)
     {
-        items.ToList().ForEach(collection.Add);
+        items.ToList().ForEach(collection.GuardedAdd);
     }
 
     /// <summary>
@@ -60,6 +62,26 @@ public static partial class Extensions
     {
         collection.Clear();
         collection.AddRange(items);
+    }
+
+    /// <summary>
+    /// Adds <paramref name="item"/> to the target <paramref name="collection"/> only if it is not already present.
+    /// </summary>
+    /// <typeparam name="T">The item type contained in the collection.</typeparam>
+    /// <param name="collection">The target collection to add the item to.</param>
+    /// <param name="item">The item to add if it is not already contained in the collection.</param>
+    /// <remarks>
+    /// This method first checks <see cref="ObservableCollection{T}.Contains(T)"/> (using
+    /// <see cref="EqualityComparer{T}.Default"/> semantics) and only calls
+    /// <see cref="ObservableCollection{T}.Add(T)"/> when the item is not found. As with standard
+    /// <see cref="ObservableCollection{T}"/> behavior, a change notification is raised only when an
+    /// item is actually added. This is useful for UI-bound lists in MVVM where duplicate entries
+    /// should be avoided.
+    /// </remarks>
+    public static void GuardedAdd<T>(this ObservableCollection<T> collection, T item)
+    {
+        if (collection.Contains(item)) return;
+        collection.Add(item);
     }
 
     #endregion

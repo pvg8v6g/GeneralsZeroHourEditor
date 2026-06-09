@@ -23,7 +23,7 @@ public class LoadProjectDataTask(
 
     private int GetWorkLoad()
     {
-        return 8;
+        return 11;
     }
 
     private async Task DoWork()
@@ -46,6 +46,9 @@ public class LoadProjectDataTask(
             Work++;
             gameDataService.GameLocomotors.SetRange(dataService.CollectTopLevelNames(dataDir, "Locomotor"));
             Work++;
+            // Load Sciences catalog
+            gameDataService.GameSciences.SetRange(dataService.CollectTopLevelNames(dataDir, "Science"));
+            Work++;
             gameDataService.FXLists.SetRange(dataService.CollectTopLevelNames(dataDir, "FXList"));
             Work++;
         }
@@ -64,8 +67,14 @@ public class LoadProjectDataTask(
         gameDataService.Infantry.SetRange(infantry);
         Work++;
 
-        // 3) Placeholders for Vehicles/Structures (future parsing)
-        // They remain empty until parsing is implemented.
-        await Task.CompletedTask;
+        // 3) Preload Vehicles
+        var vehicles = (await jsonService.LoadVehiclesAsync(dataDir)).OrderBy(u => u.Name).ToList();
+        gameDataService.Vehicles.SetRange(vehicles);
+        Work++;
+
+        // 4) Preload Structures
+        var structures = (await jsonService.LoadStructuresAsync(dataDir)).OrderBy(u => u.Name).ToList();
+        gameDataService.Structures.SetRange(structures);
+        Work++;
     }
 }

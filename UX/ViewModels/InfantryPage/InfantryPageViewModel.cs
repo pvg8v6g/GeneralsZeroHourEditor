@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using GeneralsZeroHourEditor.Command;
+using GeneralsZeroHourEditor.Enumerations;
 using GeneralsZeroHourEditor.Extensions;
 using GeneralsZeroHourEditor.Models;
 using GeneralsZeroHourEditor.Services.GameDataService;
@@ -22,7 +23,7 @@ public class InfantryPageViewModel(
     public GameObjectModel? SelectedItem
     {
         get;
-        set => SetField(ref field, value);
+        private set => SetField(ref field, value);
     }
 
     #endregion
@@ -31,13 +32,20 @@ public class InfantryPageViewModel(
 
     public RelayCommand<object> SelectedItemChangedCommand => new(SelectedItemChanged);
 
+    public RelayCommand AddPrerequisiteCommand => new(AddPrerequisite);
+
+    public RelayCommand<PrerequisiteSetModel> RemovePrerequisiteCommand => new(RemovePrerequisite);
+
+    public RelayCommand<KindOf> AddKindOfCommand => new(AddKindOf);
+
+    public RelayCommand<KindOf> RemoveKindOfCommand => new(RemoveKindOf);
+
     #endregion
 
     #region Actions & Listeners
 
     protected override async Task LoadedAction()
     {
-        var t0 = gameDataService.Infantry.Select(x => x.Name).OrderBy(x => x).ToArray();
         EntityCollection.Clear();
         EntityCollection.AddRange(gameDataService.Infantry
             .OrderBy(x => x.Name)
@@ -61,9 +69,26 @@ public class InfantryPageViewModel(
         if (selectedItem is not TreeViewModel item) return;
         if (item.GameObject is null) return;
         SelectedItem = item.GameObject;
-        // if (invokedItem is not GameObjectItemModel item) return;
-        // Model.SelectedNode = item;
-        // LoadSelectedDetail(item.Name);
+    }
+
+    private void AddPrerequisite()
+    {
+        SelectedItem?.PrereqEntries.GuardedAdd(new PrerequisiteSetModel { PrerequisiteType = PrerequisiteType.Object });
+    }
+
+    private void RemovePrerequisite(PrerequisiteSetModel model)
+    {
+        SelectedItem?.PrereqEntries.Remove(model);
+    }
+
+    private void AddKindOf(KindOf value)
+    {
+        SelectedItem?.KindOf.GuardedAdd(value);
+    }
+
+    private void RemoveKindOf(KindOf value)
+    {
+        SelectedItem?.KindOf.Remove(value);
     }
 
     #endregion

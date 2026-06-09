@@ -20,6 +20,54 @@ public class JsonService : IJsonService
 
     public async Task<IReadOnlyList<GameObjectModel>> LoadInfantryAsync(string dataDir)
     {
+        // Standardized: delegate to the shared loader using KindOf flag(s)
+        return await LoadByKindOfAsync(dataDir, "INFANTRY");
+    }
+
+    public async Task<IReadOnlyList<GameObjectModel>> LoadVehiclesAsync(string dataDir)
+    {
+        return await LoadByKindOfAsync(dataDir, "VEHICLE");
+    }
+
+    public async Task<IReadOnlyList<GameObjectModel>> LoadStructuresAsync(string dataDir)
+    {
+        return await LoadByKindOfAsync(dataDir, "STRUCTURE");
+    }
+
+    #region Private helpers
+
+    private static bool HasKindOf(JsonElement content, params string[]? flags)
+    {
+        if (flags is null || flags.Length == 0) return false;
+
+        foreach (var prop in content.EnumerateArray())
+        {
+            if (prop.ValueKind is not JsonValueKind.Object) continue;
+            if (!prop.TryGetProperty("Key", out var keyProp)) continue;
+            if (keyProp.GetString() is not "KindOf") continue;
+            if (!prop.TryGetProperty("Value", out var valArr) || valArr.ValueKind is not JsonValueKind.Array) continue;
+
+            foreach (var v in valArr.EnumerateArray())
+            {
+                if (v.ValueKind is not JsonValueKind.String) continue;
+                var current = v.GetString();
+                if (current is null) continue;
+                if (flags.Any(f => string.Equals(current, f, StringComparison.OrdinalIgnoreCase))) return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string? GetName(JsonElement obj)
+    {
+        if (!obj.TryGetProperty("Name", out var nameArr) || nameArr.ValueKind is not JsonValueKind.Array) return null;
+        var first = nameArr.EnumerateArray().FirstOrDefault();
+        return first.ValueKind is JsonValueKind.String ? first.GetString() : null;
+    }
+
+    private async Task<IReadOnlyList<GameObjectModel>> LoadByKindOfAsync(string dataDir, params string[] kindFlags)
+    {
         var results = new List<GameObjectModel>();
         if (string.IsNullOrWhiteSpace(dataDir) || !Directory.Exists(dataDir)) return results;
 
@@ -38,7 +86,7 @@ public class JsonService : IJsonService
                     if (element.ValueKind is not JsonValueKind.Object) continue;
                     if (!element.TryGetProperty("Type", out var typeProp) || typeProp.GetString() is not "Object") continue;
                     if (!element.TryGetProperty("Content", out var content) || content.ValueKind is not JsonValueKind.Array) continue;
-                    if (!HasKindOf(content, "INFANTRY")) continue;
+                    if (!HasKindOf(content, kindFlags)) continue;
 
                     var name = GetName(element);
                     if (string.IsNullOrWhiteSpace(name)) continue;
@@ -50,6 +98,7 @@ public class JsonService : IJsonService
                     ParseArmorSets(content, detail);
                     ParseWeaponSets(content, detail);
                     ParseLocomotors(content, detail);
+                    ParsePrerequisites(content, detail);
 
                     results.Add(detail);
                 }
@@ -61,31 +110,6 @@ public class JsonService : IJsonService
         }
 
         return results;
-    }
-
-    #region Private helpers
-
-    private static bool HasKindOf(JsonElement content, string flag)
-    {
-        foreach (var prop in content.EnumerateArray())
-        {
-            if (prop.ValueKind is not JsonValueKind.Object) continue;
-            if (!prop.TryGetProperty("Key", out var keyProp)) continue;
-            if (keyProp.GetString() is not "KindOf") continue;
-            if (!prop.TryGetProperty("Value", out var valArr) || valArr.ValueKind is not JsonValueKind.Array) continue;
-            if (valArr.EnumerateArray().Any(v =>
-                    v.ValueKind is JsonValueKind.String && string.Equals(v.GetString(), flag, StringComparison.OrdinalIgnoreCase)))
-                return true;
-        }
-
-        return false;
-    }
-
-    private static string? GetName(JsonElement obj)
-    {
-        if (!obj.TryGetProperty("Name", out var nameArr) || nameArr.ValueKind is not JsonValueKind.Array) return null;
-        var first = nameArr.EnumerateArray().FirstOrDefault();
-        return first.ValueKind is JsonValueKind.String ? first.GetString() : null;
     }
 
     private static void FillTopLevelFields(JsonElement content, GameObjectModel detail)
@@ -134,18 +158,6 @@ public class JsonService : IJsonService
                     detail.KindOf.Add(e);
                 }
             }
-            else if (string.Equals(key, "Prerequisites", StringComparison.OrdinalIgnoreCase))
-            {
-                foreach (var v in valArr.EnumerateArray())
-                {
-                    if (v.ValueKind is not JsonValueKind.Array) continue;
-                    var it = v.EnumerateArray().ToArray();
-                    if (it is not [{ ValueKind: JsonValueKind.String }, { ValueKind: JsonValueKind.String }, ..]) continue;
-                    var prereqParse = Enum.TryParse<PrerequisiteType>(it[0].GetString(), ignoreCase: true, out var type);
-                    if (!prereqParse) continue;
-                    detail.PrereqEntries.Add(new KeyValuePair<PrerequisiteType, string>(type, it[1].GetString() ?? string.Empty));
-                }
-            }
         }
     }
 
@@ -168,6 +180,33 @@ public class JsonService : IJsonService
                     detail.MaxHealth = sv.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
                 else if (string.Equals(sKey, "InitialHealth", StringComparison.OrdinalIgnoreCase))
                     detail.InitialHealth = sv.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
+            }
+        }
+    }
+
+    private static void ParsePrerequisites(JsonElement content, GameObjectModel detail)
+    {
+        foreach (var item in content.EnumerateArray())
+        {
+            if (item.ValueKind is not JsonValueKind.Object) continue;
+            if (!item.TryGetProperty("Type", out var blockTypeProp) || !item.TryGetProperty("Content", out var blockContent) ||
+                blockContent.ValueKind is not JsonValueKind.Array) continue;
+            if (!string.Equals(blockTypeProp.GetString(), "Prerequisites", StringComparison.OrdinalIgnoreCase)) continue;
+            foreach (var sub in blockContent.EnumerateArray())
+            {
+                if (sub.ValueKind is not JsonValueKind.Object) continue;
+                if (!sub.TryGetProperty("Key", out var sk) || !sub.TryGetProperty("Value", out var sv) ||
+                    sv.ValueKind is not JsonValueKind.Array) continue;
+                var key = sk.GetString() ?? string.Empty;
+
+                // Create a new model per prerequisite entry to avoid shared-reference overwrites
+                var model = new PrerequisiteSetModel();
+
+                var typeParse = Enum.TryParse<PrerequisiteType>(key, ignoreCase: true, out var prerequisiteType);
+                if (!typeParse) continue;
+                model.PrerequisiteType = prerequisiteType;
+                model.Prerequisite = sv.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
+                detail.PrereqEntries.Add(model);
             }
         }
     }

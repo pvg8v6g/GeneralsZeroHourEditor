@@ -26,6 +26,8 @@ public class GameDataService : PropertyChangedUpdater, IGameDataService
 
     public ObservableCollection<string> GameLocomotors { get; } = [];
 
+    public ObservableCollection<string> GameSciences { get; } = [];
+
     public ObservableCollection<string> FXLists { get; } = [];
 
     // Preloaded entities

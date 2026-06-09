@@ -38,7 +38,7 @@ public class TopBarViewModel(INavigationService navigationService, IGraphicsServ
         SaveImage = new EngineRadioIconModel
         {
             CroppedImage = await graphicsService.GetEngineIcon(11),
-            CommandIndex = "12",
+            CommandIndex = "13",
             Tooltip = "Save"
         };
 
@@ -46,81 +46,98 @@ public class TopBarViewModel(INavigationService navigationService, IGraphicsServ
         [
             new()
             {
+                CroppedImage = await graphicsService.GetEngineIcon(0),
                 IsChecked = true,
                 CommandIndex = "0",
                 Tooltip = "Infantry"
             },
             new()
             {
+                CroppedImage = await graphicsService.GetEngineIcon(1),
                 IsChecked = false,
                 CommandIndex = "1",
                 Tooltip = "Vehicles"
             },
             new()
             {
+                CroppedImage = await graphicsService.GetEngineIcon(12),
                 IsChecked = false,
                 CommandIndex = "2",
-                Tooltip = "Armors"
+                Tooltip = "Aircraft"
             },
             new()
             {
+                CroppedImage = await graphicsService.GetEngineIcon(13),
                 IsChecked = false,
                 CommandIndex = "3",
-                Tooltip = "Locomotors"
+                Tooltip = "Structures"
             },
             new()
             {
+                CroppedImage = await graphicsService.GetEngineIcon(6),
                 IsChecked = false,
                 CommandIndex = "4",
-                Tooltip = "Science"
-            },
-            new()
-            {
-                IsChecked = false,
-                CommandIndex = "5",
-                Tooltip = "Upgrades"
-            },
-            new()
-            {
-                IsChecked = false,
-                CommandIndex = "6",
                 Tooltip = "Weapons"
             },
             new()
             {
+                CroppedImage = await graphicsService.GetEngineIcon(2),
+                IsChecked = false,
+                CommandIndex = "5",
+                Tooltip = "Armors"
+            },
+            new()
+            {
+                CroppedImage = await graphicsService.GetEngineIcon(3),
+                IsChecked = false,
+                CommandIndex = "6",
+                Tooltip = "Locomotors"
+            },
+            new()
+            {
+                CroppedImage = await graphicsService.GetEngineIcon(4),
                 IsChecked = false,
                 CommandIndex = "7",
+                Tooltip = "Science"
+            },
+            new()
+            {
+                CroppedImage = await graphicsService.GetEngineIcon(5),
+                IsChecked = false,
+                CommandIndex = "8",
+                Tooltip = "Upgrades"
+            },
+            new()
+            {
+                CroppedImage = await graphicsService.GetEngineIcon(7),
+                IsChecked = false,
+                CommandIndex = "9",
                 Tooltip = "Special Powers"
             },
             new()
             {
+                CroppedImage = await graphicsService.GetEngineIcon(8),
                 IsChecked = false,
-                CommandIndex = "8",
+                CommandIndex = "10",
                 Tooltip = "Command Buttons"
             },
             new()
             {
+                CroppedImage = await graphicsService.GetEngineIcon(9),
                 IsChecked = false,
-                CommandIndex = "9",
+                CommandIndex = "11",
                 Tooltip = "Command Sets"
             },
             new()
             {
+                CroppedImage = await graphicsService.GetEngineIcon(10),
                 IsChecked = false,
-                CommandIndex = "9",
+                CommandIndex = "12",
                 Tooltip = "Object Creation"
             },
         ];
 
-        var tasks = buttonIcons
-            .Select(async (x, i) =>
-            {
-                x.CroppedImage = await graphicsService.GetEngineIcon(i);
-                return x;
-            })
-            .ToArray();
-
-        EngineImages = new ObservableCollection<EngineRadioIconModel>(await Task.WhenAll(tasks));
+        EngineImages = new ObservableCollection<EngineRadioIconModel>(buttonIcons);
     }
 
     public RelayCommand<string> TopBarCommand => new(TopBarAction);
@@ -135,25 +152,29 @@ public class TopBarViewModel(INavigationService navigationService, IGraphicsServ
             case "1": // vehicle
                 navigationService.NavigateTo<Views.VehiclePage.VehiclePage>();
                 break;
-            case "2":
+            case "2": // aircraft
                 break;
-            case "3":
+            case "3": // structures
                 break;
-            case "4":
+            case "4": // weapons
                 break;
-            case "5":
+            case "5": // armors
                 break;
-            case "6":
+            case "6": // locomotors
                 break;
-            case "7":
+            case "7": // science
                 break;
-            case "8":
+            case "8": // upgrades
                 break;
-            case "9":
+            case "9": // special powers
                 break;
-            case "10":
+            case "10": // command buttons
                 break;
-            case "11": // saving
+            case "11": // command sets
+                break;
+            case "12": // object creation
+                break;
+            case "13": // saving
                 navigationService.ShowProgressPopup<SaveProjectDataTask>("Saving Game Files");
                 break;
         }

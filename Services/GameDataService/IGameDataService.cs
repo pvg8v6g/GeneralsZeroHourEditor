@@ -15,6 +15,8 @@ public interface IGameDataService
 
     public ObservableCollection<string> GameLocomotors { get; }
 
+    public ObservableCollection<string> GameSciences { get; }
+
     public ObservableCollection<string> FXLists { get; }
 
     // Preloaded game objects by category (full objects kept in memory)

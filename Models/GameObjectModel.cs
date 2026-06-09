@@ -78,7 +78,7 @@ public class GameObjectModel : BaseModel
     }
 
     // Structured prerequisites (Type = Object/Science, Value = name)
-    public ObservableCollection<KeyValuePair<PrerequisiteType, string>> PrereqEntries { get; } = [];
+    public ObservableCollection<PrerequisiteSetModel> PrereqEntries { get; } = [];
 
     // Flags
     public ObservableCollection<KindOf> KindOf { get; } = [];
