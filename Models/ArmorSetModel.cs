@@ -1,6 +1,8 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using GeneralsZeroHourEditor.Command;
 using GeneralsZeroHourEditor.Enumerations;
+using GeneralsZeroHourEditor.Extensions;
 
 namespace GeneralsZeroHourEditor.Models;
 
@@ -20,4 +22,26 @@ public class ArmorSetModel : BaseModel
         get;
         set => SetField(ref field, value);
     } = string.Empty;
+
+    #region Commands
+
+    public RelayCommand<ArmorConditions> AddArmorConditionCommand => new(AddArmorCondition);
+
+    public RelayCommand<ArmorConditions> RemoveArmorConditionCommand => new(RemoveArmorCondition);
+
+    #endregion
+
+    #region Command Handlers
+
+    private void AddArmorCondition(ArmorConditions value)
+    {
+        Conditions.GuardedAdd(value);
+    }
+
+    private void RemoveArmorCondition(ArmorConditions value)
+    {
+        Conditions.Remove(value);
+    }
+
+    #endregion
 }

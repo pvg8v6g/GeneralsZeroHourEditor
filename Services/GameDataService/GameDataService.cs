@@ -1,9 +1,11 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using MercuryLibrary.WinUI3Components;
 using GeneralsZeroHourEditor.Models;
 
 namespace GeneralsZeroHourEditor.Services.GameDataService;
 
+[SuppressMessage("ReSharper", "InconsistentNaming")]
 public class GameDataService : PropertyChangedUpdater, IGameDataService
 {
     #region Properties
@@ -27,6 +29,8 @@ public class GameDataService : PropertyChangedUpdater, IGameDataService
     public ObservableCollection<string> GameLocomotors { get; } = [];
 
     public ObservableCollection<string> GameSciences { get; } = [];
+
+    public ObservableCollection<string> DamageFXs { get; } = [];
 
     public ObservableCollection<string> FXLists { get; } = [];
 

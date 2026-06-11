@@ -35,22 +35,28 @@ public class PrerequisiteSetModel : PropertyChangedUpdater
                         .OrderBy(x => x)
                         .ToArray();
                     PrerequisiteChoices.SetRange(masterList);
+                    Prerequisite ??= PrerequisiteChoices.FirstOrDefault() ?? string.Empty;
                     break;
                 }
                 case PrerequisiteType.Science:
                 {
                     PrerequisiteChoices.SetRange(GameDataService.GameSciences.OrderBy(x => x).ToArray());
+                    Prerequisite ??= PrerequisiteChoices.FirstOrDefault() ?? string.Empty;
                     break;
                 }
             }
         }
     } = PrerequisiteType.Object;
 
-    public string Prerequisite
+    public string? Prerequisite
     {
         get;
-        set => SetField(ref field, value);
-    } = string.Empty;
+        set
+        {
+            if (string.IsNullOrEmpty(value)) return;
+            SetField(ref field, value);
+        }
+    }
 
     public ObservableCollection<string> PrerequisiteChoices { get; } = [];
 

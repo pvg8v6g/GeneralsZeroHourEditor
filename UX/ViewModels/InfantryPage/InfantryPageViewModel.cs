@@ -20,6 +20,8 @@ public class InfantryPageViewModel(
 
     public ObservableCollection<TreeViewModel> EntityCollection { get; } = [];
 
+    public ObservableCollection<string> ArmorSets { get; } = [];
+
     public GameObjectModel? SelectedItem
     {
         get;
@@ -39,6 +41,18 @@ public class InfantryPageViewModel(
     public RelayCommand<KindOf> AddKindOfCommand => new(AddKindOf);
 
     public RelayCommand<KindOf> RemoveKindOfCommand => new(RemoveKindOf);
+
+    public RelayCommand AddArmorSetCommand => new(AddArmorSet);
+
+    public RelayCommand<ArmorSetModel> RemoveArmorSetCommand => new(RemoveArmorSet);
+
+    public RelayCommand<ArmorConditions> AddArmorConditionsCommand => new(AddArmorConditions);
+
+    public RelayCommand<ArmorConditions> RemoveArmorConditionsCommand => new(RemoveArmorConditions);
+
+    public RelayCommand AddWeaponSetCommand => new(AddWeaponSet);
+
+    public RelayCommand<WeaponSlotModel> RemoveWeaponSetCommand => new(RemoveWeaponSet);
 
     #endregion
 
@@ -61,6 +75,8 @@ public class InfantryPageViewModel(
                 model.Children.AddRange(models);
                 return model;
             }));
+
+        ArmorSets.SetRange(gameDataService.GameArmors.OrderBy(x => x).ToArray());
         await Task.CompletedTask;
     }
 
@@ -89,6 +105,36 @@ public class InfantryPageViewModel(
     private void RemoveKindOf(KindOf value)
     {
         SelectedItem?.KindOf.Remove(value);
+    }
+
+    private void AddArmorSet()
+    {
+        SelectedItem?.ArmorSets.Add(new ArmorSetModel());
+    }
+
+    private void RemoveArmorSet(ArmorSetModel model)
+    {
+        SelectedItem?.ArmorSets.Remove(model);
+    }
+
+    private void AddArmorConditions(ArmorConditions value)
+    {
+        // SelectedItem?.ArmorSets.GuardedAdd(value);
+    }
+
+    private void RemoveArmorConditions(ArmorConditions value)
+    {
+        // SelectedItem?.ArmorSets.Remove(value);
+    }
+
+    private void AddWeaponSet()
+    {
+        SelectedItem?.WeaponSets.Add(new WeaponSlotModel());
+    }
+
+    private void RemoveWeaponSet(WeaponSlotModel model)
+    {
+        SelectedItem?.WeaponSets.Remove(model);
     }
 
     #endregion

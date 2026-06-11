@@ -11,9 +11,9 @@ public class WeaponSlotModel : BaseModel
 
     public ObservableCollection<KeyValuePair<WeaponSlot, AutoChooseSources[]>> AutoChooseSources { get; } = [];
 
-    public WeaponLockSharedAcrossSets WeaponLockSharedAcrossSets
+    public WeaponLockSharedAcrossSets? WeaponLockSharedAcrossSets
     {
         get;
         set => SetField(ref field, value);
-    } = WeaponLockSharedAcrossSets.No;
+    } = null;
 }
