@@ -12,4 +12,7 @@ public interface IJsonService
     Task<IReadOnlyList<GameObjectModel>> LoadVehiclesAsync(string dataDir);
 
     Task<IReadOnlyList<GameObjectModel>> LoadStructuresAsync(string dataDir);
+
+    // Catalog: Sides come from PlayerTemplate entries (Content: Key = "Side") with BaseSide association
+    Task<IReadOnlyList<SideModel>> LoadSidesAsync(string dataDir);
 }

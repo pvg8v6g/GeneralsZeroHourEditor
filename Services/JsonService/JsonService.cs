@@ -2,6 +2,7 @@
 using GeneralsZeroHourEditor.Enumerations;
 using GeneralsZeroHourEditor.Extensions;
 using GeneralsZeroHourEditor.Models;
+using GeneralsZeroHourEditor.Models.WeaponSet;
 
 namespace GeneralsZeroHourEditor.Services.JsonService;
 
@@ -32,6 +33,83 @@ public class JsonService : IJsonService
     public async Task<IReadOnlyList<GameObjectModel>> LoadStructuresAsync(string dataDir)
     {
         return await LoadByKindOfAsync(dataDir, "STRUCTURE");
+    }
+
+    public async Task<IReadOnlyList<SideModel>> LoadSidesAsync(string dataDir)
+    {
+        // Parse all PlayerTemplate entries across the folder tree and produce a list of models
+        // holding both Side and BaseSide values.
+        var sideTuples = new List<(string? BaseSide, string Side)>();
+        if (string.IsNullOrWhiteSpace(dataDir) || !Directory.Exists(dataDir)) return [];
+
+        var parseOptions = new JsonDocumentOptions { MaxDepth = 4096 };
+        foreach (var jsonPath in Directory.EnumerateFiles(dataDir, "*.json", SearchOption.AllDirectories))
+        {
+            try
+            {
+                await using var stream = File.OpenRead(jsonPath);
+                using var doc = await JsonDocument.ParseAsync(stream, parseOptions);
+                if (doc.RootElement.ValueKind is not JsonValueKind.Array) continue;
+
+                foreach (var element in doc.RootElement.EnumerateArray())
+                {
+                    if (element.ValueKind is not JsonValueKind.Object) continue;
+                    if (!element.TryGetProperty("Type", out var typeProp) || !typeProp.ValueEquals("PlayerTemplate")) continue;
+                    if (!element.TryGetProperty("Content", out var content) || content.ValueKind is not JsonValueKind.Array) continue;
+
+                    string? baseSide = null;
+
+                    // First pass: capture BaseSide if present
+                    foreach (var prop in content.EnumerateArray())
+                    {
+                        if (prop.ValueKind is not JsonValueKind.Object) continue;
+                        if (!prop.TryGetProperty("Key", out var keyProp)) continue;
+                        if (!keyProp.ValueEquals("BaseSide")) continue;
+                        if (!prop.TryGetProperty("Value", out var valArr) || valArr.ValueKind is not JsonValueKind.Array) continue;
+                        var first = valArr.EnumerateArray().FirstOrDefault();
+                        baseSide = first.ValueKind is JsonValueKind.String ? first.GetString() : null;
+                        break;
+                    }
+
+                    // Second pass: collect Side values
+                    foreach (var prop in content.EnumerateArray())
+                    {
+                        if (prop.ValueKind is not JsonValueKind.Object) continue;
+                        if (!prop.TryGetProperty("Key", out var keyProp)) continue;
+                        if (!prop.TryGetProperty("Value", out var valArr) || valArr.ValueKind is not JsonValueKind.Array) continue;
+                        if (!keyProp.ValueEquals("Side")) continue;
+
+                        foreach (var v in valArr.EnumerateArray())
+                        {
+                            if (v.ValueKind is not JsonValueKind.String) continue;
+                            var side = v.GetString();
+                            if (!string.IsNullOrEmpty(side))
+                            {
+                                sideTuples.Add((baseSide, side));
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // ignore malformed files
+            }
+        }
+
+        // Deduplicate by Side, preserving first BaseSide association
+        var map = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (baseSide, side) in sideTuples)
+        {
+            map.TryAdd(side, baseSide);
+        }
+
+        var ordered = map
+            .Select(kv => new SideModel(kv.Key, kv.Value))
+            .OrderBy(s => s.Side)
+            .ToList();
+
+        return ordered;
     }
 
     #region Private helpers
@@ -132,6 +210,7 @@ public class JsonService : IJsonService
             else if (string.Equals(key, "BuildCost", StringComparison.OrdinalIgnoreCase)) detail.BuildCost = value ?? string.Empty;
             else if (string.Equals(key, "BuildTime", StringComparison.OrdinalIgnoreCase)) detail.BuildTime = value ?? string.Empty;
             else if (string.Equals(key, "BuildCompletion", StringComparison.OrdinalIgnoreCase)) detail.BuildCompletion = value ?? string.Empty;
+            else if (string.Equals(key, "TransportSlotCount", StringComparison.OrdinalIgnoreCase)) detail.TransportSlotCount = value ?? string.Empty;
             else if (string.Equals(key, "VisionRange", StringComparison.OrdinalIgnoreCase)) detail.VisionRange = value ?? string.Empty;
             else if (string.Equals(key, "ShroudClearingRange", StringComparison.OrdinalIgnoreCase))
                 detail.ShroudClearingRange = value ?? string.Empty;
@@ -314,7 +393,11 @@ public class JsonService : IJsonService
                     }
                     case var _ when key.Equals("Weapon", StringComparison.OrdinalIgnoreCase):
                     {
-                        var slot = key.ToUpperInvariant() switch
+                        var elements = sv.EnumerateArray()
+                            .Select(x => x.GetString() ?? string.Empty)
+                            .ToArray();
+                        if (elements.Length is not 2) break;
+                        var slot = elements[0].ToUpperInvariant() switch
                         {
                             "PRIMARY" => WeaponSlot.PRIMARY,
                             "SECONDARY" => WeaponSlot.SECONDARY,
@@ -323,8 +406,15 @@ public class JsonService : IJsonService
                         };
 
                         if (slot is null) break;
-                        var weapon = sv.EnumerateArray().FirstOrDefault().GetString() ?? string.Empty;
-                        model.Weapons.Add(new KeyValuePair<WeaponSlot, string>(slot.Value, weapon));
+                        var weapon = elements[1];
+                        if (detail.Name is "AmericaInfantryRanger")
+                        {
+                            Console.WriteLine(slot);
+                            Console.WriteLine(weapon);
+                        }
+
+                        var weaponModel = new WeaponModel { WeaponSlot = slot.Value, Weapon = weapon };
+                        model.Weapons.Add(weaponModel);
                         break;
                     }
                     case var _ when key.Equals("AutoChooseSources", StringComparison.OrdinalIgnoreCase):
@@ -341,7 +431,9 @@ public class JsonService : IJsonService
                             .Select(s => Enum.TryParse<AutoChooseSources>(s, ignoreCase: true, out var v) ? (AutoChooseSources?) v : null)
                             .OfType<AutoChooseSources>()
                             .ToArray();
-                        model.AutoChooseSources.Add(new KeyValuePair<WeaponSlot, AutoChooseSources[]>(slot, sources));
+                        var weaponAutoChooseSourceModel = new WeaponAutoChooseSourceModel { WeaponSlot = slot };
+                        weaponAutoChooseSourceModel.AutoChooseSources.SetRange(sources);
+                        model.AutoChooseSources.GuardedAdd(weaponAutoChooseSourceModel);
                         break;
                     }
                     case var _ when key.Equals("WeaponLockSharedAcrossSets", StringComparison.OrdinalIgnoreCase):

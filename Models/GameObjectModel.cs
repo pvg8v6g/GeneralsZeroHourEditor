@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using GeneralsZeroHourEditor.Enumerations;
+using GeneralsZeroHourEditor.Models.WeaponSet;
 
 namespace GeneralsZeroHourEditor.Models;
 
@@ -76,6 +77,12 @@ public class GameObjectModel : BaseModel
         get;
         set => SetField(ref field, value);
     }
+
+    public string TransportSlotCount
+    {
+        get;
+        set => SetField(ref field, value);
+    } = "1";
 
     // Structured prerequisites (Type = Object/Science, Value = name)
     public ObservableCollection<PrerequisiteSetModel> PrereqEntries { get; } = [];

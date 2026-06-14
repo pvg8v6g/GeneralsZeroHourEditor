@@ -9,6 +9,8 @@ public interface IGameDataService
 
     public double WindowHeight { get; set; }
 
+    public ObservableCollection<string> Sides { get; }
+
     public ObservableCollection<string> GameWeapons { get; }
 
     public ObservableCollection<string> GameArmors { get; }

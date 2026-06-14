@@ -9,6 +9,7 @@
       xmlns:engineTextBox="using:GeneralsZeroHourEditor.UX.Components.EngineTextBox"
       xmlns:enumerations="using:GeneralsZeroHourEditor.Enumerations"
       xmlns:ui="using:CommunityToolkit.WinUI"
+      xmlns:weaponSet="using:GeneralsZeroHourEditor.Models.WeaponSet"
       mc:Ignorable="d"
       behaviors:LoadedBehavior.LoadedCommand="{x:Bind ViewModel.LoadedCommand}">
   <Grid ColumnSpacing="10" Padding="5">
@@ -59,197 +60,179 @@
         <enginePanel:EnginePanel Grid.Row="0"
                                  Title="Object Metadata"
                                  Visibility="{x:Bind ViewModel.SelectedItem, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
-          <Grid RowSpacing="10"
-                ColumnSpacing="12">
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="2*" />
-              <ColumnDefinition Width="2*" />
-              <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <!-- Define rows to prevent content stacking/overlap -->
+          <Grid RowSpacing="15">
             <Grid.RowDefinitions>
-              <RowDefinition Height="Auto" />  <!-- Row 0: Name / Side -->
-              <RowDefinition Height="Auto" />  <!-- Row 1: EditorSorting / CommandSet -->
-              <RowDefinition Height="Auto" />  <!-- Row 2: SelectPortrait / ButtonImage -->
-              <RowDefinition Height="Auto" />  <!-- Row 3: BuildCost / BuildTime -->
-              <RowDefinition Height="Auto" />  <!-- Row 4: BuildCompletion -->
-              <RowDefinition Height="Auto" />  <!-- Row 5: Lists (Prerequisites / KindOf) -->
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <!-- Identity & UI Art -->
-            <engineTextBox:EngineTextBox Grid.Column="0"
-                                         Grid.Row="0"
-                                         Header="Name"
-                                         Text="{x:Bind ViewModel.SelectedItem.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Grid RowSpacing="10"
+                  ColumnSpacing="12">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <!-- Define rows to prevent content stacking/overlap -->
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />  <!-- Row 0: Name / Side -->
+                <RowDefinition Height="Auto" />  <!-- Row 1: EditorSorting / CommandSet -->
+                <RowDefinition Height="Auto" />  <!-- Row 2: SelectPortrait / ButtonImage -->
+                <RowDefinition Height="Auto" />  <!-- Row 3: BuildCost / BuildTime -->
+                <RowDefinition Height="Auto" />  <!-- Row 4: BuildCompletion -->
+              </Grid.RowDefinitions>
 
-            <engineTextBox:EngineTextBox Grid.Column="1"
-                                         Grid.Row="0"
-                                         Header="Side"
-                                         Text="{x:Bind ViewModel.SelectedItem.Side, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              <!-- Identity & UI Art -->
+              <engineTextBox:EngineTextBox Grid.Column="0"
+                                           Grid.Row="0"
+                                           Header="Name"
+                                           Text="{x:Bind ViewModel.SelectedItem.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <engineTextBox:EngineTextBox Grid.Column="0"
-                                         Grid.Row="1"
-                                         Header="EditorSorting"
-                                         Text="{x:Bind ViewModel.SelectedItem.EditorSorting, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-            <engineTextBox:EngineTextBox Grid.Column="1"
-                                         Grid.Row="1"
-                                         Header="CommandSet"
-                                         Text="{x:Bind ViewModel.SelectedItem.CommandSet, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-            <engineTextBox:EngineTextBox Grid.Column="0"
-                                         Grid.Row="2"
-                                         Header="SelectPortrait"
-                                         Text="{x:Bind ViewModel.SelectedItem.SelectPortrait, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-            <engineTextBox:EngineTextBox Grid.Column="1"
-                                         Grid.Row="2"
-                                         Header="ButtonImage"
-                                         Text="{x:Bind ViewModel.SelectedItem.ButtonImage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-            <!-- Production -->
-            <engineTextBox:EngineTextBox Grid.Column="0"
-                                         Grid.Row="3"
-                                         Header="BuildCost"
-                                         InputType="Integer"
-                                         Text="{x:Bind ViewModel.SelectedItem.BuildCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-            <engineTextBox:EngineTextBox Grid.Column="1"
-                                         Grid.Row="3"
-                                         Header="BuildTime"
-                                         InputType="Double"
-                                         Text="{x:Bind ViewModel.SelectedItem.BuildTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-            <engineTextBox:EngineTextBox Grid.Column="0"
-                                         Grid.Row="4"
-                                         Header="BuildCompletion"
-                                         Text="{x:Bind ViewModel.SelectedItem.BuildCompletion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-            <!-- Prerequisites (typed list: Object/Science) -->
-            <StackPanel Grid.Column="0"
-                        Grid.Row="5"
+              <ComboBox Grid.Column="1"
+                        Grid.Row="0"
                         HorizontalAlignment="Stretch"
-                        Spacing="4">
-              <Grid ColumnSpacing="8">
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="*" />
-                  <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Prerequisites" FontWeight="SemiBold" />
-                <Button Grid.Column="1"
-                        Content="Add"
-                        Command="{x:Bind ViewModel.AddPrerequisiteCommand, Mode=OneWay}"
-                        ToolTipService.ToolTip="Add prerequisite row" />
-              </Grid>
+                        Header="Side"
+                        ItemsSource="{x:Bind ViewModel.GameDataService.Sides, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.SelectedItem.Side, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-              <ListView x:Name="PrereqList"
-                        Tag="{x:Bind ViewModel, Mode=OneWay}"
-                        ItemsSource="{x:Bind ViewModel.SelectedItem.PrereqEntries, Mode=OneWay}">
-                <ListView.ItemTemplate>
-                  <DataTemplate x:DataType="models:PrerequisiteSetModel">
-                    <Grid ColumnSpacing="8"
-                          Padding="0 10 0 10">
-                      <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                      </Grid.ColumnDefinitions>
+              <engineTextBox:EngineTextBox Grid.Column="0"
+                                           Grid.Row="1"
+                                           Header="EditorSorting"
+                                           Text="{x:Bind ViewModel.SelectedItem.EditorSorting, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                      <!-- Type picker -->
-                      <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
-                      <ComboBox Grid.Column="0"
-                                MinWidth="200"
-                                MaxWidth="200"
-                                HorizontalContentAlignment="Stretch"
-                                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                ItemsSource="{ui:EnumValues Type=enumerations:PrerequisiteType}"
-                                SelectedItem="{x:Bind PrerequisiteType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              <engineTextBox:EngineTextBox Grid.Column="1"
+                                           Grid.Row="1"
+                                           Header="CommandSet"
+                                           Text="{x:Bind ViewModel.SelectedItem.CommandSet, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                      <ComboBox Grid.Column="1"
-                                MinWidth="250"
-                                MaxWidth="250"
-                                HorizontalContentAlignment="Stretch"
-                                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                ItemsSource="{Binding PrerequisiteChoices}"
-                                SelectedItem="{Binding Prerequisite, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              <engineTextBox:EngineTextBox Grid.Column="0"
+                                           Grid.Row="2"
+                                           Header="SelectPortrait"
+                                           Text="{x:Bind ViewModel.SelectedItem.SelectPortrait, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                      <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
-                      <Button Grid.Column="2"
-                              ToolTipService.ToolTip="Remove"
-                              AutomationProperties.Name="Remove"
-                              Command="{Binding ElementName=PrereqList, Path=Tag.RemovePrerequisiteCommand}"
-                              CommandParameter="{Binding}"
-                              Background="{StaticResource RedBrush}">
-                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
-                      </Button>
-                    </Grid>
-                  </DataTemplate>
-                </ListView.ItemTemplate>
-              </ListView>
-            </StackPanel>
+              <engineTextBox:EngineTextBox Grid.Column="1"
+                                           Grid.Row="2"
+                                           Header="ButtonImage"
+                                           Text="{x:Bind ViewModel.SelectedItem.ButtonImage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <!-- KindOf flags (list) -->
-            <StackPanel Grid.Column="1"
-                        Grid.Row="5"
+              <!-- Production -->
+              <engineTextBox:EngineTextBox Grid.Column="0"
+                                           Grid.Row="3"
+                                           Header="BuildCost"
+                                           InputType="Integer"
+                                           Text="{x:Bind ViewModel.SelectedItem.BuildCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+              <engineTextBox:EngineTextBox Grid.Column="1"
+                                           Grid.Row="3"
+                                           Header="BuildTime"
+                                           InputType="Double"
+                                           Text="{x:Bind ViewModel.SelectedItem.BuildTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+              <engineTextBox:EngineTextBox Grid.Column="0"
+                                           Grid.Row="4"
+                                           Header="BuildCompletion"
+                                           Text="{x:Bind ViewModel.SelectedItem.BuildCompletion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+              <engineTextBox:EngineTextBox Grid.Column="1"
+                                           Grid.Row="4"
+                                           Header="TransportSlotCount"
+                                           Text="{x:Bind ViewModel.SelectedItem.TransportSlotCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+              <!-- Upgrade Cameos (read-only list for now) -->
+              <StackPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="5" Spacing="4">
+                <TextBlock Text="Upgrade Cameos" FontWeight="SemiBold" />
+                <ListView ItemsSource="{x:Bind ViewModel.SelectedItem.UpgradeCameos, Mode=OneWay}" />
+              </StackPanel>
+            </Grid>
+            <StackPanel Grid.Row="1"
+                        Orientation="Horizontal"
                         HorizontalAlignment="Stretch"
-                        Spacing="4">
-              <Grid HorizontalAlignment="Stretch"
-                    ColumnSpacing="6">
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="Auto" />
-                  <ColumnDefinition Width="*" />
-                  <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+                        Spacing="12">
+              <!-- Prerequisites (typed list: Object/Science) -->
+              <StackPanel HorizontalAlignment="Stretch"
+                          Spacing="4">
+                <Grid ColumnSpacing="8">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="Prerequisites" FontWeight="SemiBold" />
+                  <Button Grid.Column="1"
+                          Content="Add"
+                          Command="{x:Bind ViewModel.AddPrerequisiteCommand, Mode=OneWay}"
+                          ToolTipService.ToolTip="Add prerequisite row" />
+                </Grid>
 
-                <ComboBox Grid.Column="0"
-                          x:Name="KindOfInput"
-                          Header="KindOf"
-                          MinWidth="200"
-                          MaxWidth="200"
-                          VerticalAlignment="Bottom"
-                          HorizontalContentAlignment="Stretch"
-                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                          ItemsSource="{ui:EnumValues Type=enumerations:KindOf}" />
+                <ListView x:Name="PrereqList"
+                          Tag="{x:Bind ViewModel, Mode=OneWay}"
+                          ItemsSource="{x:Bind ViewModel.SelectedItem.PrereqEntries, Mode=OneWay}">
+                  <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="models:PrerequisiteSetModel">
+                      <Grid ColumnSpacing="8"
+                            Padding="0 10 0 10">
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="*" />
+                          <ColumnDefinition Width="*" />
+                          <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-                <Button Grid.Column="2"
-                        Content="Add"
-                        Command="{x:Bind ViewModel.AddKindOfCommand, Mode=OneWay}"
-                        CommandParameter="{x:Bind KindOfInput.SelectedItem, Mode=OneWay}"
-                        VerticalAlignment="Bottom"
-                        ToolTipService.ToolTip="Add KindOf flag" />
-              </Grid>
-              <ListView x:Name="KindOfList"
-                        Tag="{x:Bind ViewModel, Mode=OneWay}"
-                        ItemsSource="{x:Bind ViewModel.SelectedItem.KindOf, Mode=OneWay}"
-                        SelectionMode="Single">
-                <ListView.ItemTemplate>
-                  <DataTemplate x:DataType="enumerations:KindOf">
-                    <Grid ColumnSpacing="6">
-                      <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                      </Grid.ColumnDefinitions>
-                      <TextBlock Text="{x:Bind}"
-                                 VerticalAlignment="Center" />
-                      <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
-                      <Button Grid.Column="1"
-                              ToolTipService.ToolTip="Remove"
-                              AutomationProperties.Name="Remove"
-                              Command="{Binding ElementName=KindOfList, Path=Tag.RemoveKindOfCommand}"
-                              CommandParameter="{Binding}"
-                              Background="{StaticResource RedBrush}">
-                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
-                      </Button>
-                    </Grid>
-                  </DataTemplate>
-                </ListView.ItemTemplate>
-              </ListView>
-            </StackPanel>
+                        <!-- Type picker -->
+                        <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
+                        <ComboBox Grid.Column="0"
+                                  MinWidth="200"
+                                  MaxWidth="200"
+                                  HorizontalContentAlignment="Stretch"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  ItemsSource="{ui:EnumValues Type=enumerations:PrerequisiteType}"
+                                  SelectedItem="{x:Bind PrerequisiteType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <!-- Upgrade Cameos (read-only list for now) -->
-            <StackPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="6" Spacing="4">
-              <TextBlock Text="Upgrade Cameos" FontWeight="SemiBold" />
-              <ListView ItemsSource="{x:Bind ViewModel.SelectedItem.UpgradeCameos, Mode=OneWay}" />
+                        <ComboBox Grid.Column="1"
+                                  MinWidth="250"
+                                  MaxWidth="250"
+                                  HorizontalContentAlignment="Stretch"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  ItemsSource="{Binding PrerequisiteChoices}"
+                                  SelectedItem="{Binding Prerequisite, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
+                        <Button Grid.Column="2"
+                                ToolTipService.ToolTip="Remove"
+                                AutomationProperties.Name="Remove"
+                                Command="{Binding ElementName=PrereqList, Path=Tag.RemovePrerequisiteCommand}"
+                                CommandParameter="{Binding}"
+                                Background="{StaticResource RedBrush}">
+                          <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
+                        </Button>
+                      </Grid>
+                    </DataTemplate>
+                  </ListView.ItemTemplate>
+                </ListView>
+              </StackPanel>
+
+              <!-- KindOf flags (checkbox list) -->
+              <ScrollView VerticalScrollBarVisibility="Auto"
+                          MinHeight="400"
+                          MaxHeight="400">
+                <Border Padding="8 5 8 5"
+                        CornerRadius="8"
+                        Background="{StaticResource PrimaryBrush}">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="KindOf" FontWeight="SemiBold" />
+                    <ListView x:Name="KindOfCheckboxList"
+                              ItemsSource="{ui:EnumValues Type=enumerations:KindOf}"
+                              SelectionMode="None">
+                      <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="enumerations:KindOf">
+                          <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
+                          <CheckBox Content="{x:Bind}"
+                                    behaviors:CheckedListBehavior.Value="{Binding}"
+                                    behaviors:CheckedListBehavior.ItemsSource="{Binding ElementName=KindOfCheckboxList, Path=DataContext.SelectedItem.KindOf}" />
+                        </DataTemplate>
+                      </ListView.ItemTemplate>
+                    </ListView>
+                  </StackPanel>
+                </Border>
+              </ScrollView>
             </StackPanel>
           </Grid>
         </enginePanel:EnginePanel>
@@ -303,7 +286,8 @@
                         ItemsSource="{x:Bind ViewModel.SelectedItem.ArmorSets, Mode=OneWay}">
                 <ListView.ItemTemplate>
                   <DataTemplate x:DataType="models:ArmorSetModel">
-                    <Grid ColumnSpacing="8"
+                    <Grid x:Name="ArmorSetRoot"
+                          ColumnSpacing="8"
                           RowSpacing="15"
                           Padding="0 8 0 10">
                       <Grid.ColumnDefinitions>
@@ -325,61 +309,22 @@
                                 ItemsSource="{Binding ElementName=ArmorSetsList, Path=Tag.ArmorSets}"
                                 SelectedItem="{x:Bind Armor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 
-                      <!-- Conditions flags (list) -->
+                      <!-- Conditions flags (checkbox list) -->
                       <Border Grid.Column="0"
                               Grid.Row="1"
                               Padding="8 5 8 5"
                               Background="{StaticResource PrimaryBrush}"
                               CornerRadius="8">
-                        <StackPanel HorizontalAlignment="Stretch"
-                                    Spacing="4">
-                          <Grid HorizontalAlignment="Stretch"
-                                ColumnSpacing="6">
-                            <Grid.ColumnDefinitions>
-                              <ColumnDefinition Width="Auto" />
-                              <ColumnDefinition Width="*" />
-                              <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <ComboBox Grid.Column="0"
-                                      x:Name="ArmorConditionsInput"
-                                      Header="Armor Conditions"
-                                      MinWidth="200"
-                                      MaxWidth="200"
-                                      VerticalAlignment="Bottom"
-                                      HorizontalContentAlignment="Stretch"
-                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                      ItemsSource="{ui:EnumValues Type=enumerations:ArmorConditions}" />
-
-                            <Button Grid.Column="2"
-                                    Content="Add"
-                                    Command="{x:Bind AddArmorConditionCommand}"
-                                    CommandParameter="{Binding ElementName=ArmorConditionsInput, Path=SelectedItem, Mode=OneWay}"
-                                    VerticalAlignment="Bottom"
-                                    ToolTipService.ToolTip="Add armor condition" />
-                          </Grid>
-                          <ListView x:Name="InnerArmorConditionList"
-                                    ItemsSource="{x:Bind Conditions}"
-                                    SelectionMode="Single">
+                        <StackPanel Spacing="6">
+                          <TextBlock Text="Armor Conditions" FontWeight="SemiBold" />
+                          <ListView x:Name="ArmorConditionsCheckboxList"
+                                    ItemsSource="{ui:EnumValues Type=enumerations:ArmorConditions}"
+                                    SelectionMode="None">
                             <ListView.ItemTemplate>
                               <DataTemplate x:DataType="enumerations:ArmorConditions">
-                                <Grid ColumnSpacing="6">
-                                  <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                  </Grid.ColumnDefinitions>
-                                  <TextBlock Text="{x:Bind}"
-                                             VerticalAlignment="Center" />
-                                  <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
-                                  <Button Grid.Column="1"
-                                          ToolTipService.ToolTip="Remove"
-                                          AutomationProperties.Name="Remove"
-                                          Command="{Binding ElementName=InnerArmorConditionList, Path=DataContext.RemoveArmorConditionCommand}"
-                                          CommandParameter="{Binding}"
-                                          Background="{StaticResource RedBrush}">
-                                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
-                                  </Button>
-                                </Grid>
+                                <CheckBox Content="{x:Bind}"
+                                          behaviors:CheckedListBehavior.Value="{Binding}"
+                                          behaviors:CheckedListBehavior.ItemsSource="{Binding ElementName=ArmorConditionsCheckboxList, Path=DataContext.Conditions}" />
                               </DataTemplate>
                             </ListView.ItemTemplate>
                           </ListView>
@@ -425,7 +370,232 @@
                       Tag="{x:Bind ViewModel, Mode=OneWay}"
                       ItemsSource="{x:Bind ViewModel.SelectedItem.WeaponSets, Mode=OneWay}">
               <ListView.ItemTemplate>
-                <DataTemplate x:DataType="models:WeaponSlotModel">
+                <DataTemplate x:DataType="weaponSet:WeaponSlotModel">
+                  <Grid x:Name="WeaponSlotRoot" ColumnSpacing="6" RowSpacing="8" Padding="8">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="Auto" />
+                      <RowDefinition Height="Auto" />
+                      <RowDefinition Height="Auto" />
+                      <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Conditions flags (checkbox list) -->
+                    <Border Grid.Column="0"
+                            Grid.Row="0"
+                            Padding="8 5 8 5"
+                            Background="{StaticResource PrimaryBrush}"
+                            CornerRadius="8">
+                      <StackPanel Spacing="6">
+                        <TextBlock Text="Weapon Conditions" FontWeight="SemiBold" />
+                        <ListView x:Name="WeaponConditionsCheckboxList"
+                                  ItemsSource="{ui:EnumValues Type=enumerations:WeaponConditions}"
+                                  SelectionMode="None">
+                          <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="enumerations:WeaponConditions">
+                              <CheckBox Content="{x:Bind}"
+                                        behaviors:CheckedListBehavior.Value="{Binding}"
+                                        behaviors:CheckedListBehavior.ItemsSource="{Binding ElementName=WeaponConditionsCheckboxList, Path=DataContext.Conditions}" />
+                            </DataTemplate>
+                          </ListView.ItemTemplate>
+                        </ListView>
+                      </StackPanel>
+                    </Border>
+
+                    <!-- Weapon List -->
+                    <Border Grid.Column="0"
+                            Grid.Row="1"
+                            Padding="8 5 8 5"
+                            Background="{StaticResource PrimaryBrush}"
+                            CornerRadius="8">
+                      <StackPanel Spacing="6">
+                        <Grid HorizontalAlignment="Stretch"
+                              ColumnSpacing="20">
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                          </Grid.ColumnDefinitions>
+                          <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                          </Grid.RowDefinitions>
+
+                          <TextBlock Text="Weapons" FontWeight="SemiBold" />
+
+                          <ComboBox Grid.Column="0"
+                                    Grid.Row="1"
+                                    x:Name="WeaponSlot"
+                                    VerticalAlignment="Bottom"
+                                    Header="Slot"
+                                    MinWidth="160"
+                                    MaxWidth="160"
+                                    ItemsSource="{ui:EnumValues Type=enumerations:WeaponSlot}" />
+
+                          <Button Grid.Column="1"
+                                  Grid.Row="1"
+                                  AutomationProperties.Name="Remove"
+                                  VerticalAlignment="Bottom"
+                                  Content="Add"
+                                  Command="{x:Bind AddWeaponCommand}"
+                                  CommandParameter="{Binding ElementName=WeaponSlot, Path=SelectedItem, Mode=OneWay}"
+                                  ToolTipService.ToolTip="Weapon" />
+                        </Grid>
+                        <ListView x:Name="WeaponList"
+                                  Tag="{Binding ElementName=WeaponSetsList, Path=SelectedItem}"
+                                  ItemsSource="{x:Bind Weapons, Mode=OneWay}">
+                          <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="weaponSet:WeaponModel">
+                              <Grid ColumnSpacing="8"
+                                    Padding="0 10 0 10">
+                                <Grid.ColumnDefinitions>
+                                  <ColumnDefinition Width="*" />
+                                  <ColumnDefinition Width="*" />
+                                  <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Text="{x:Bind WeaponSlot}"
+                                           FontWeight="SemiBold" />
+
+                                <!-- <ComboBox Grid.Column="1" -->
+                                <!--           ItemsSource="{Binding ElementName=WeaponSetsList, Path=Tag.GameDataService.GameWeapons}" -->
+                                <!--           SelectedItem="{x:Bind Weapon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" /> -->
+                                <!-- <ListView Grid.Column="1" -->
+                                <!--           x:Name="AutoChooseSourceSelector" -->
+                                <!--           ItemsSource="{ui:EnumValues Type=enumerations:AutoChooseSources}" -->
+                                <!--           SelectionMode="None"> -->
+                                <!--   <ListView.ItemTemplate> -->
+                                <!--     <DataTemplate x:DataType="enumerations:AutoChooseSources"> -->
+                                <!--       <CheckBox Content="{x:Bind}" -->
+                                <!--                 behaviors:CheckedListBehavior.Value="{Binding}" -->
+                                <!--                 behaviors:CheckedListBehavior.ItemsSource="{Binding ElementName=AutoChooseSourceSelector, Path=DataContext.SelectedItem.AutoChooseSources}" /> -->
+                                <!--     </DataTemplate> -->
+                                <!--   </ListView.ItemTemplate> -->
+                                <!-- </ListView> -->
+
+                                <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
+                                <Button Grid.Column="2"
+                                        ToolTipService.ToolTip="Remove"
+                                        AutomationProperties.Name="Remove"
+                                        Command="{Binding ElementName=WeaponList, Path=Tag.RemoveWeaponCommand}"
+                                        CommandParameter="{Binding}"
+                                        Background="{StaticResource RedBrush}">
+                                  <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
+                                </Button>
+                              </Grid>
+                            </DataTemplate>
+                          </ListView.ItemTemplate>
+                        </ListView>
+                      </StackPanel>
+                    </Border>
+
+                    <!-- AutoChooseSources sub-list -->
+                    <Border Grid.Column="0"
+                            Grid.Row="2"
+                            Padding="8 5 8 5"
+                            Background="{StaticResource PrimaryBrush}"
+                            CornerRadius="8">
+                      <StackPanel Spacing="6">
+                        <Grid HorizontalAlignment="Stretch"
+                              ColumnSpacing="20">
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                          </Grid.ColumnDefinitions>
+                          <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                          </Grid.RowDefinitions>
+
+                          <TextBlock Text="Auto Choose Sources" FontWeight="SemiBold" />
+
+                          <ComboBox Grid.Column="0"
+                                    Grid.Row="1"
+                                    x:Name="AutoChooseSourcesSlot"
+                                    VerticalAlignment="Bottom"
+                                    Header="Slot"
+                                    MinWidth="160"
+                                    MaxWidth="160"
+                                    ItemsSource="{ui:EnumValues Type=enumerations:WeaponSlot}" />
+
+                          <Button Grid.Column="1"
+                                  Grid.Row="1"
+                                  AutomationProperties.Name="Remove"
+                                  VerticalAlignment="Bottom"
+                                  Content="Add"
+                                  Command="{x:Bind AddAutoChooseSourcesCommand}"
+                                  CommandParameter="{Binding ElementName=AutoChooseSourcesSlot, Path=SelectedItem, Mode=OneWay}"
+                                  ToolTipService.ToolTip="Auto Choose Sources" />
+                        </Grid>
+                        <ListView x:Name="AutoChooseSourcesList"
+                                  Tag="{Binding ElementName=WeaponSetsList, Path=SelectedItem}"
+                                  ItemsSource="{x:Bind AutoChooseSources, Mode=OneWay}">
+                          <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="weaponSet:WeaponAutoChooseSourceModel">
+                              <Grid ColumnSpacing="8"
+                                    Padding="0 10 0 10">
+                                <Grid.ColumnDefinitions>
+                                  <ColumnDefinition Width="*" />
+                                  <ColumnDefinition Width="*" />
+                                  <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Text="{x:Bind WeaponSlot}"
+                                           FontWeight="SemiBold" />
+
+                                <ListView Grid.Column="1"
+                                          x:Name="AutoChooseSourceSelector"
+                                          ItemsSource="{ui:EnumValues Type=enumerations:AutoChooseSources}"
+                                          SelectionMode="None">
+                                  <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="enumerations:AutoChooseSources">
+                                      <CheckBox Content="{x:Bind}"
+                                                behaviors:CheckedListBehavior.Value="{Binding}"
+                                                behaviors:CheckedListBehavior.ItemsSource="{Binding ElementName=AutoChooseSourceSelector, Path=DataContext.SelectedItem.AutoChooseSources}" />
+                                    </DataTemplate>
+                                  </ListView.ItemTemplate>
+                                </ListView>
+
+                                <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
+                                <Button Grid.Column="2"
+                                        ToolTipService.ToolTip="Remove"
+                                        AutomationProperties.Name="Remove"
+                                        Command="{Binding ElementName=AutoChooseSourcesList, Path=Tag.RemoveAutoChooseSourcesCommand}"
+                                        CommandParameter="{Binding}"
+                                        Background="{StaticResource RedBrush}">
+                                  <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
+                                </Button>
+                              </Grid>
+                            </DataTemplate>
+                          </ListView.ItemTemplate>
+                        </ListView>
+                      </StackPanel>
+                    </Border>
+
+                    <!-- Weapon lock across sets (nullable) -->
+                    <ComboBox Grid.Column="0"
+                              Grid.Row="3"
+                              Header="WeaponLockSharedAcrossSets"
+                              ItemsSource="{ui:EnumValues Type=enumerations:WeaponLockSharedAcrossSets}"
+                              SelectedItem="{x:Bind WeaponLockSharedAcrossSets, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              MinWidth="250"
+                              MaxWidth="250" />
+
+                    <!-- Remove set button -->
+                    <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
+                    <Button Grid.Column="1"
+                            Grid.Row="0"
+                            Grid.RowSpan="4"
+                            ToolTipService.ToolTip="Remove"
+                            AutomationProperties.Name="Remove"
+                            Command="{Binding ElementName=WeaponSetsList, Path=Tag.RemoveWeaponSetCommand}"
+                            CommandParameter="{Binding}"
+                            Background="{StaticResource RedBrush}">
+                      <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
+                    </Button>
+                  </Grid>
                 </DataTemplate>
               </ListView.ItemTemplate>
             </ListView>

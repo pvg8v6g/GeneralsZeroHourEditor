@@ -22,6 +22,8 @@ public class GameDataService : PropertyChangedUpdater, IGameDataService
         set => SetField(ref field, value);
     } = 0.0d;
 
+    public ObservableCollection<string> Sides { get; } = [];
+
     public ObservableCollection<string> GameWeapons { get; } = [];
 
     public ObservableCollection<string> GameArmors { get; } = [];

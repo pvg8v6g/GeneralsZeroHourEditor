@@ -3,6 +3,7 @@ using GeneralsZeroHourEditor.Command;
 using GeneralsZeroHourEditor.Enumerations;
 using GeneralsZeroHourEditor.Extensions;
 using GeneralsZeroHourEditor.Models;
+using GeneralsZeroHourEditor.Models.WeaponSet;
 using GeneralsZeroHourEditor.Services.GameDataService;
 using GeneralsZeroHourEditor.Services.GameRegistryService;
 using GeneralsZeroHourEditor.Services.JsonService;
@@ -20,13 +21,13 @@ public class InfantryPageViewModel(
 
     public ObservableCollection<TreeViewModel> EntityCollection { get; } = [];
 
-    public ObservableCollection<string> ArmorSets { get; } = [];
-
     public GameObjectModel? SelectedItem
     {
         get;
         private set => SetField(ref field, value);
     }
+
+    public IGameDataService GameDataService => gameDataService;
 
     #endregion
 
@@ -61,7 +62,7 @@ public class InfantryPageViewModel(
     protected override async Task LoadedAction()
     {
         EntityCollection.Clear();
-        EntityCollection.AddRange(gameDataService.Infantry
+        EntityCollection.AddRange(GameDataService.Infantry
             .OrderBy(x => x.Name)
             .GroupBy(x => x.Side)
             .OrderBy(x => x.Key)
@@ -76,7 +77,6 @@ public class InfantryPageViewModel(
                 return model;
             }));
 
-        ArmorSets.SetRange(gameDataService.GameArmors.OrderBy(x => x).ToArray());
         await Task.CompletedTask;
     }
 

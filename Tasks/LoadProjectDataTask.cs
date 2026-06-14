@@ -40,6 +40,10 @@ public class LoadProjectDataTask(
             gameRegistryService.LoadFromSchema(schemaPath);
             Work++;
             // Ensure changeable catalogs are populated too (they live in GameDataService)
+            // Sides come from PlayerTemplate.json contents (Key = "Side")
+            var sideModels = await jsonService.LoadSidesAsync(dataDir);
+            gameDataService.Sides.SetRange(sideModels.Select(m => m.Side));
+            Work++;
             gameDataService.GameWeapons.SetRange(dataService.CollectTopLevelNames(dataDir, "Weapon"));
             Work++;
             gameDataService.GameArmors.SetRange(dataService.CollectTopLevelNames(dataDir, "Armor"));
