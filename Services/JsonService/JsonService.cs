@@ -407,12 +407,6 @@ public class JsonService : IJsonService
 
                         if (slot is null) break;
                         var weapon = elements[1];
-                        if (detail.Name is "AmericaInfantryRanger")
-                        {
-                            Console.WriteLine(slot);
-                            Console.WriteLine(weapon);
-                        }
-
                         var weaponModel = new WeaponModel { WeaponSlot = slot.Value, Weapon = weapon };
                         model.Weapons.Add(weaponModel);
                         break;

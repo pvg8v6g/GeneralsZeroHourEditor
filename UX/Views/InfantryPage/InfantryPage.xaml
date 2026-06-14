@@ -427,7 +427,7 @@
 
                           <ComboBox Grid.Column="0"
                                     Grid.Row="1"
-                                    x:Name="WeaponSlot"
+                                    x:Name="WeaponSlotChoice"
                                     VerticalAlignment="Bottom"
                                     Header="Slot"
                                     MinWidth="160"
@@ -440,7 +440,7 @@
                                   VerticalAlignment="Bottom"
                                   Content="Add"
                                   Command="{x:Bind AddWeaponCommand}"
-                                  CommandParameter="{Binding ElementName=WeaponSlot, Path=SelectedItem, Mode=OneWay}"
+                                  CommandParameter="{Binding ElementName=WeaponSlotChoice, Path=SelectedItem, Mode=OneWay}"
                                   ToolTipService.ToolTip="Weapon" />
                         </Grid>
                         <ListView x:Name="WeaponList"
@@ -459,21 +459,10 @@
                                 <TextBlock Text="{x:Bind WeaponSlot}"
                                            FontWeight="SemiBold" />
 
-                                <!-- <ComboBox Grid.Column="1" -->
-                                <!--           ItemsSource="{Binding ElementName=WeaponSetsList, Path=Tag.GameDataService.GameWeapons}" -->
-                                <!--           SelectedItem="{x:Bind Weapon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" /> -->
-                                <!-- <ListView Grid.Column="1" -->
-                                <!--           x:Name="AutoChooseSourceSelector" -->
-                                <!--           ItemsSource="{ui:EnumValues Type=enumerations:AutoChooseSources}" -->
-                                <!--           SelectionMode="None"> -->
-                                <!--   <ListView.ItemTemplate> -->
-                                <!--     <DataTemplate x:DataType="enumerations:AutoChooseSources"> -->
-                                <!--       <CheckBox Content="{x:Bind}" -->
-                                <!--                 behaviors:CheckedListBehavior.Value="{Binding}" -->
-                                <!--                 behaviors:CheckedListBehavior.ItemsSource="{Binding ElementName=AutoChooseSourceSelector, Path=DataContext.SelectedItem.AutoChooseSources}" /> -->
-                                <!--     </DataTemplate> -->
-                                <!--   </ListView.ItemTemplate> -->
-                                <!-- </ListView> -->
+                                <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
+                                <ComboBox Grid.Column="1"
+                                          ItemsSource="{Binding ElementName=WeaponSetsList, Path=Tag.GameDataService.GameWeapons}"
+                                          SelectedItem="{x:Bind Weapon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                                 <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                                 <Button Grid.Column="2"
@@ -522,7 +511,7 @@
 
                           <Button Grid.Column="1"
                                   Grid.Row="1"
-                                  AutomationProperties.Name="Remove"
+                                  AutomationProperties.Name="Add"
                                   VerticalAlignment="Bottom"
                                   Content="Add"
                                   Command="{x:Bind AddAutoChooseSourcesCommand}"
