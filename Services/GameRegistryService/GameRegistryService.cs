@@ -18,10 +18,7 @@ public class GameRegistryService(IDataService dataService, IGameDataService game
         // 1. Collect and cache catalogs in GameDataService (load once)
         //    Populate central, long-lived collections if they are not yet loaded.
 
-        if (gameDataService.GameWeapons.Count == 0)
-        {
-            PopulateCatalog(gameDataService.GameWeapons, dataService.CollectTopLevelNames(projectDataDir, "Weapon"));
-        }
+        // Weapons are now loaded as full objects elsewhere during initial load
 
         if (gameDataService.GameArmors.Count == 0)
         {

@@ -44,7 +44,9 @@ public class LoadProjectDataTask(
             var sideModels = await jsonService.LoadSidesAsync(dataDir);
             gameDataService.Sides.SetRange(sideModels.Select(m => m.Side));
             Work++;
-            gameDataService.GameWeapons.SetRange(dataService.CollectTopLevelNames(dataDir, "Weapon"));
+            // Load full Weapon objects from aggregated JSON
+            var weapons = await jsonService.LoadWeaponsAsync(dataDir);
+            gameDataService.GameWeapons.SetRange(weapons);
             Work++;
             gameDataService.GameArmors.SetRange(dataService.CollectTopLevelNames(dataDir, "Armor"));
             Work++;
@@ -80,5 +82,7 @@ public class LoadProjectDataTask(
         var structures = (await jsonService.LoadStructuresAsync(dataDir)).OrderBy(u => u.Name).ToList();
         gameDataService.Structures.SetRange(structures);
         Work++;
+
+        // Weapons already loaded from JSON above
     }
 }

@@ -2,6 +2,7 @@
 using GeneralsZeroHourEditor.Enumerations;
 using GeneralsZeroHourEditor.Extensions;
 using GeneralsZeroHourEditor.Models;
+using GeneralsZeroHourEditor.Models.Weapon;
 using GeneralsZeroHourEditor.Models.WeaponSet;
 
 namespace GeneralsZeroHourEditor.Services.JsonService;
@@ -110,6 +111,148 @@ public class JsonService : IJsonService
             .ToList();
 
         return ordered;
+    }
+
+    public async Task<IReadOnlyList<WeaponDefinition>> LoadWeaponsAsync(string dataDir)
+    {
+        var list = new List<WeaponDefinition>();
+        if (string.IsNullOrWhiteSpace(dataDir) || !Directory.Exists(dataDir)) return list;
+
+        var parseOptions = new JsonDocumentOptions { MaxDepth = 4096 };
+        foreach (var jsonPath in Directory.EnumerateFiles(dataDir, "*.json", SearchOption.AllDirectories))
+        {
+            try
+            {
+                await using var stream = File.OpenRead(jsonPath);
+                using var doc = await JsonDocument.ParseAsync(stream, parseOptions);
+                if (doc.RootElement.ValueKind is not JsonValueKind.Array) continue;
+
+                foreach (var element in doc.RootElement.EnumerateArray())
+                {
+                    if (element.ValueKind is not JsonValueKind.Object) continue;
+                    if (!element.TryGetProperty("Type", out var typeProp) || !typeProp.ValueEquals("Weapon")) continue;
+                    if (!element.TryGetProperty("Name", out var nameArr) || nameArr.ValueKind is not JsonValueKind.Array) continue;
+                    if (!element.TryGetProperty("Content", out var content) || content.ValueKind is not JsonValueKind.Array) continue;
+
+                    var nameToken = nameArr.EnumerateArray().FirstOrDefault();
+                    var name = nameToken.ValueKind is JsonValueKind.String ? nameToken.GetString() ?? string.Empty : string.Empty;
+                    if (string.IsNullOrWhiteSpace(name)) continue;
+
+                    var weapon = new WeaponDefinition { Name = name };
+
+                    foreach (var prop in content.EnumerateArray())
+                    {
+                        if (prop.ValueKind is not JsonValueKind.Object) continue;
+                        if (!prop.TryGetProperty("Key", out var keyProp) || !prop.TryGetProperty("Value", out var valArr) || valArr.ValueKind is not JsonValueKind.Array)
+                            continue;
+
+                        var key = keyProp.GetString() ?? string.Empty;
+                        if (string.IsNullOrWhiteSpace(key)) continue;
+
+                        var values = valArr.EnumerateArray()
+                            .Where(v => v.ValueKind is JsonValueKind.String)
+                            .Select(v => v.GetString() ?? string.Empty)
+                            .ToArray();
+
+                        switch (key)
+                        {
+                            case var _ when key.Equals("PrimaryDamage", StringComparison.OrdinalIgnoreCase):
+                                weapon.PrimaryDamage = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("PrimaryDamageRadius", StringComparison.OrdinalIgnoreCase):
+                                weapon.PrimaryDamageRadius = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("AttackRange", StringComparison.OrdinalIgnoreCase):
+                                weapon.AttackRange = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("MinimumAttackRange", StringComparison.OrdinalIgnoreCase):
+                                weapon.MinimumAttackRange = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("PreAttackDelay", StringComparison.OrdinalIgnoreCase):
+                                weapon.PreAttackDelay = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("DelayBetweenShots", StringComparison.OrdinalIgnoreCase):
+                                weapon.DelayBetweenShots = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("ClipSize", StringComparison.OrdinalIgnoreCase):
+                                weapon.ClipSize = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("ClipReloadTime", StringComparison.OrdinalIgnoreCase):
+                                weapon.ClipReloadTime = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("ProjectileObject", StringComparison.OrdinalIgnoreCase):
+                                weapon.ProjectileObject = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("ProjectileDetonationOCL", StringComparison.OrdinalIgnoreCase):
+                                weapon.ProjectileDetonationOCL = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("ProjectileCollidesWith", StringComparison.OrdinalIgnoreCase):
+                                weapon.ProjectileCollidesWith = string.Join(' ', values); break;
+                            case var _ when key.Equals("FireFX", StringComparison.OrdinalIgnoreCase):
+                                weapon.FireFX = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("RadiusDamageAffects", StringComparison.OrdinalIgnoreCase):
+                                weapon.RadiusDamageAffects = string.Join(' ', values); break;
+                            case var _ when key.Equals("ScatterRadius", StringComparison.OrdinalIgnoreCase):
+                                weapon.ScatterRadius = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("AcceptableAimDelta", StringComparison.OrdinalIgnoreCase):
+                                weapon.AcceptableAimDelta = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("WeaponSpeed", StringComparison.OrdinalIgnoreCase):
+                                weapon.WeaponSpeed = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("DamageType", StringComparison.OrdinalIgnoreCase):
+                                weapon.DamageType = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("DeathType", StringComparison.OrdinalIgnoreCase):
+                                weapon.DeathType = values.FirstOrDefault() ?? string.Empty; break;
+                            case var _ when key.Equals("WeaponBonusDamageScalar", StringComparison.OrdinalIgnoreCase):
+                                weapon.WeaponBonusDamageScalar = string.Join(' ', values); break;
+                            case var _ when key.Equals("Meta", StringComparison.OrdinalIgnoreCase):
+                                weapon.Meta = string.Join(' ', values); break;
+                            case var _ when key.Equals("Report", StringComparison.OrdinalIgnoreCase):
+                                weapon.Report = string.Join(' ', values); break;
+                            default:
+                                // Unmapped key — simply skip for now; we will extend mapping iteratively
+                                break;
+                        }
+                    }
+
+                    list.Add(weapon);
+                }
+            }
+            catch
+            {
+                // ignore malformed files
+            }
+        }
+
+        return list.OrderBy(w => w.Name, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    public async Task<IReadOnlyCollection<string>> GetWeaponKeysAsync(string dataDir)
+    {
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(dataDir) || !Directory.Exists(dataDir)) return keys;
+
+        var parseOptions = new JsonDocumentOptions { MaxDepth = 4096 };
+        foreach (var jsonPath in Directory.EnumerateFiles(dataDir, "*.json", SearchOption.AllDirectories))
+        {
+            try
+            {
+                await using var stream = File.OpenRead(jsonPath);
+                using var doc = await JsonDocument.ParseAsync(stream, parseOptions);
+                if (doc.RootElement.ValueKind is not JsonValueKind.Array) continue;
+
+                foreach (var element in doc.RootElement.EnumerateArray())
+                {
+                    if (element.ValueKind is not JsonValueKind.Object) continue;
+                    if (!element.TryGetProperty("Type", out var typeProp) || !typeProp.ValueEquals("Weapon")) continue;
+                    if (!element.TryGetProperty("Content", out var content) || content.ValueKind is not JsonValueKind.Array) continue;
+
+                    foreach (var prop in content.EnumerateArray())
+                    {
+                        if (prop.ValueKind is not JsonValueKind.Object) continue;
+                        if (!prop.TryGetProperty("Key", out var keyProp)) continue;
+                        var key = keyProp.GetString();
+                        if (string.IsNullOrWhiteSpace(key)) continue;
+                        keys.Add(key);
+                    }
+                }
+            }
+            catch
+            {
+                // ignore malformed files
+            }
+        }
+
+        return keys;
     }
 
     #region Private helpers

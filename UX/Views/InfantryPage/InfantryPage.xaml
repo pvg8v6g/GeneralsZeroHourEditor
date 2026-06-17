@@ -1,4 +1,5 @@
 ﻿<Page x:Class="GeneralsZeroHourEditor.UX.Views.InfantryPage.InfantryPage"
+      x:Name="PageRoot"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -306,7 +307,7 @@
                                 Header="Armor"
                                 MinWidth="250"
                                 MaxWidth="250"
-                                ItemsSource="{Binding ElementName=ArmorSetsList, Path=Tag.ArmorSets}"
+                                ItemsSource="{Binding ElementName=ArmorSetsList, Path=Tag.GameDataService.GameArmors}"
                                 SelectedItem="{x:Bind Armor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 
                       <!-- Conditions flags (checkbox list) -->
@@ -444,7 +445,6 @@
                                   ToolTipService.ToolTip="Weapon" />
                         </Grid>
                         <ListView x:Name="WeaponList"
-                                  Tag="{Binding ElementName=WeaponSetsList, Path=SelectedItem}"
                                   ItemsSource="{x:Bind Weapons, Mode=OneWay}">
                           <ListView.ItemTemplate>
                             <DataTemplate x:DataType="weaponSet:WeaponModel">
@@ -468,7 +468,7 @@
                                 <Button Grid.Column="2"
                                         ToolTipService.ToolTip="Remove"
                                         AutomationProperties.Name="Remove"
-                                        Command="{Binding ElementName=WeaponList, Path=Tag.RemoveWeaponCommand}"
+                                        Command="{Binding ElementName=WeaponList, Path=DataContext.RemoveWeaponCommand}"
                                         CommandParameter="{Binding}"
                                         Background="{StaticResource RedBrush}">
                                   <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
@@ -519,7 +519,6 @@
                                   ToolTipService.ToolTip="Auto Choose Sources" />
                         </Grid>
                         <ListView x:Name="AutoChooseSourcesList"
-                                  Tag="{Binding ElementName=WeaponSetsList, Path=SelectedItem}"
                                   ItemsSource="{x:Bind AutoChooseSources, Mode=OneWay}">
                           <ListView.ItemTemplate>
                             <DataTemplate x:DataType="weaponSet:WeaponAutoChooseSourceModel">
@@ -542,7 +541,7 @@
                                     <DataTemplate x:DataType="enumerations:AutoChooseSources">
                                       <CheckBox Content="{x:Bind}"
                                                 behaviors:CheckedListBehavior.Value="{Binding}"
-                                                behaviors:CheckedListBehavior.ItemsSource="{Binding ElementName=AutoChooseSourceSelector, Path=DataContext.SelectedItem.AutoChooseSources}" />
+                                                behaviors:CheckedListBehavior.ItemsSource="{Binding ElementName=AutoChooseSourceSelector, Path=DataContext.AutoChooseSources}" />
                                     </DataTemplate>
                                   </ListView.ItemTemplate>
                                 </ListView>
@@ -551,7 +550,7 @@
                                 <Button Grid.Column="2"
                                         ToolTipService.ToolTip="Remove"
                                         AutomationProperties.Name="Remove"
-                                        Command="{Binding ElementName=AutoChooseSourcesList, Path=Tag.RemoveAutoChooseSourcesCommand}"
+                                        Command="{Binding ElementName=AutoChooseSourcesList, Path=DataContext.RemoveAutoChooseSourcesCommand}"
                                         CommandParameter="{Binding}"
                                         Background="{StaticResource RedBrush}">
                                   <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
@@ -579,7 +578,7 @@
                             Grid.RowSpan="4"
                             ToolTipService.ToolTip="Remove"
                             AutomationProperties.Name="Remove"
-                            Command="{Binding ElementName=WeaponSetsList, Path=Tag.RemoveWeaponSetCommand}"
+                            Command="{Binding ElementName=PageRoot, Path=ViewModel.RemoveWeaponSetCommand}"
                             CommandParameter="{Binding}"
                             Background="{StaticResource RedBrush}">
                       <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />

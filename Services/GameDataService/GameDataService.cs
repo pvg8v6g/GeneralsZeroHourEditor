@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using MercuryLibrary.WinUI3Components;
 using GeneralsZeroHourEditor.Models;
+using GeneralsZeroHourEditor.Models.Weapon;
 
 namespace GeneralsZeroHourEditor.Services.GameDataService;
 
@@ -24,7 +25,7 @@ public class GameDataService : PropertyChangedUpdater, IGameDataService
 
     public ObservableCollection<string> Sides { get; } = [];
 
-    public ObservableCollection<string> GameWeapons { get; } = [];
+    public ObservableCollection<WeaponDefinition> GameWeapons { get; } = [];
 
     public ObservableCollection<string> GameArmors { get; } = [];
 

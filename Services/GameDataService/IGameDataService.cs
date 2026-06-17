@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using GeneralsZeroHourEditor.Models;
+using GeneralsZeroHourEditor.Models.Weapon;
 
 namespace GeneralsZeroHourEditor.Services.GameDataService;
 
@@ -11,7 +12,8 @@ public interface IGameDataService
 
     public ObservableCollection<string> Sides { get; }
 
-    public ObservableCollection<string> GameWeapons { get; }
+    // Full parsed weapons loaded from pre-generated JSON (Generals + Zero Hour)
+    public ObservableCollection<WeaponDefinition> GameWeapons { get; }
 
     public ObservableCollection<string> GameArmors { get; }
 
