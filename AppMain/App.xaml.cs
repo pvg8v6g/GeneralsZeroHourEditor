@@ -10,10 +10,12 @@ using GeneralsZeroHourEditor.UX.ViewModels.HomePage;
 using GeneralsZeroHourEditor.UX.ViewModels.InfantryPage;
 using GeneralsZeroHourEditor.UX.ViewModels.TopBar;
 using GeneralsZeroHourEditor.UX.ViewModels.VehiclePage;
+using GeneralsZeroHourEditor.UX.ViewModels.WeaponPage;
 using GeneralsZeroHourEditor.UX.Views.HomePage;
 using GeneralsZeroHourEditor.UX.Views.InfantryPage;
 using GeneralsZeroHourEditor.UX.Views.MainPage;
 using GeneralsZeroHourEditor.UX.Views.VehiclePage;
+using GeneralsZeroHourEditor.UX.Views.WeaponPage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using GeneralsZeroHourEditor.Services.BigArchiveService;
@@ -44,6 +46,7 @@ public partial class App
         services.AddSingleton<TopBarViewModel>();
         services.AddSingleton<InfantryPageViewModel>();
         services.AddSingleton<VehiclePageViewModel>();
+        services.AddSingleton<WeaponPageViewModel>();
 
         #endregion
 
@@ -53,6 +56,7 @@ public partial class App
         services.AddSingleton<HomePage>();
         services.AddSingleton<InfantryPage>();
         services.AddSingleton<VehiclePage>();
+        services.AddSingleton<WeaponPage>();
 
         #endregion
 

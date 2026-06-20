@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using GeneralsZeroHourEditor.Enumerations;
+using GeneralsZeroHourEditor.Enumerations;
 using GeneralsZeroHourEditor.Extensions;
 using GeneralsZeroHourEditor.Models;
 using GeneralsZeroHourEditor.Models.Weapon;
@@ -143,7 +144,8 @@ public class JsonService : IJsonService
                     foreach (var prop in content.EnumerateArray())
                     {
                         if (prop.ValueKind is not JsonValueKind.Object) continue;
-                        if (!prop.TryGetProperty("Key", out var keyProp) || !prop.TryGetProperty("Value", out var valArr) || valArr.ValueKind is not JsonValueKind.Array)
+                        if (!prop.TryGetProperty("Key", out var keyProp) || !prop.TryGetProperty("Value", out var valArr) ||
+                            valArr.ValueKind is not JsonValueKind.Array)
                             continue;
 
                         var key = keyProp.GetString() ?? string.Empty;
@@ -177,7 +179,20 @@ public class JsonService : IJsonService
                             case var _ when key.Equals("ProjectileDetonationOCL", StringComparison.OrdinalIgnoreCase):
                                 weapon.ProjectileDetonationOCL = values.FirstOrDefault() ?? string.Empty; break;
                             case var _ when key.Equals("ProjectileCollidesWith", StringComparison.OrdinalIgnoreCase):
-                                weapon.ProjectileCollidesWith = string.Join(' ', values); break;
+                            {
+                                var mask = ProjectileCollidesWith.NONE;
+                                foreach (var token in values.SelectMany(v =>
+                                             (v ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)))
+                                {
+                                    if (Enum.TryParse<ProjectileCollidesWith>(token, true, out var flag))
+                                    {
+                                        mask |= flag;
+                                    }
+                                }
+
+                                weapon.ProjectileCollidesWith = mask;
+                                break;
+                            }
                             case var _ when key.Equals("FireFX", StringComparison.OrdinalIgnoreCase):
                                 weapon.FireFX = values.FirstOrDefault() ?? string.Empty; break;
                             case var _ when key.Equals("RadiusDamageAffects", StringComparison.OrdinalIgnoreCase):
@@ -189,9 +204,25 @@ public class JsonService : IJsonService
                             case var _ when key.Equals("WeaponSpeed", StringComparison.OrdinalIgnoreCase):
                                 weapon.WeaponSpeed = values.FirstOrDefault() ?? string.Empty; break;
                             case var _ when key.Equals("DamageType", StringComparison.OrdinalIgnoreCase):
-                                weapon.DamageType = values.FirstOrDefault() ?? string.Empty; break;
+                            {
+                                var token = values.FirstOrDefault();
+                                if (token is not null && Enum.TryParse<DamageType>(token, true, out var dt))
+                                {
+                                    weapon.DamageType = dt;
+                                }
+
+                                break;
+                            }
                             case var _ when key.Equals("DeathType", StringComparison.OrdinalIgnoreCase):
-                                weapon.DeathType = values.FirstOrDefault() ?? string.Empty; break;
+                            {
+                                var token = values.FirstOrDefault();
+                                if (token is not null && Enum.TryParse<DeathType>(token, true, out var de))
+                                {
+                                    weapon.DeathType = de;
+                                }
+
+                                break;
+                            }
                             case var _ when key.Equals("WeaponBonusDamageScalar", StringComparison.OrdinalIgnoreCase):
                                 weapon.WeaponBonusDamageScalar = string.Join(' ', values); break;
                             case var _ when key.Equals("Meta", StringComparison.OrdinalIgnoreCase):
@@ -610,7 +641,7 @@ public class JsonService : IJsonService
             var locomotor = line[1];
             if (string.IsNullOrEmpty(locomotor)) continue;
 
-            detail.LocomotorSets.Add(new KeyValuePair<LocomotorConditions, string>(condition, locomotor));
+            detail.LocomotorSets.Add(new LocomotorSetModel { Condition = condition, Locomotor = locomotor });
         }
     }
 

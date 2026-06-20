@@ -55,6 +55,10 @@ public class InfantryPageViewModel(
 
     public RelayCommand<WeaponSlotModel> RemoveWeaponSetCommand => new(RemoveWeaponSet);
 
+    public RelayCommand AddLocomotorCommand => new(AddLocomotorSet);
+
+    public RelayCommand<LocomotorSetModel> RemoveLocomotorCommand => new(RemoveLocomotorSet);
+
     #endregion
 
     #region Actions & Listeners
@@ -135,6 +139,16 @@ public class InfantryPageViewModel(
     private void RemoveWeaponSet(WeaponSlotModel model)
     {
         SelectedItem?.WeaponSets.Remove(model);
+    }
+
+    private void AddLocomotorSet()
+    {
+        SelectedItem?.LocomotorSets.Add(new LocomotorSetModel());
+    }
+
+    private void RemoveLocomotorSet(LocomotorSetModel model)
+    {
+        SelectedItem?.LocomotorSets.Remove(model);
     }
 
     #endregion

@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using GeneralsZeroHourEditor.Enumerations;
 using MercuryLibrary.WinUI3Components;
 
 namespace GeneralsZeroHourEditor.Models.Weapon;
@@ -99,17 +100,17 @@ public class WeaponDefinition : PropertyChangedUpdater
         set => SetField(ref field, value);
     } = string.Empty;
 
-    public string DamageType
+    public DamageType DamageType
     {
         get;
         set => SetField(ref field, value);
-    } = string.Empty;
+    }
 
-    public string DeathType
+    public DeathType DeathType
     {
         get;
         set => SetField(ref field, value);
-    } = string.Empty;
+    }
 
     public string ProjectileDetonationOCL
     {
@@ -117,11 +118,11 @@ public class WeaponDefinition : PropertyChangedUpdater
         set => SetField(ref field, value);
     } = string.Empty;
 
-    public string ProjectileCollidesWith
+    public ProjectileCollidesWith ProjectileCollidesWith
     {
         get;
         set => SetField(ref field, value);
-    } = string.Empty;
+    }
 
     public string AcceptableAimDelta
     {

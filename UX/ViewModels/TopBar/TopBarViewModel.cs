@@ -157,6 +157,7 @@ public class TopBarViewModel(INavigationService navigationService, IGraphicsServ
             case "3": // structures
                 break;
             case "4": // weapons
+                navigationService.NavigateTo<Views.WeaponPage.WeaponPage>();
                 break;
             case "5": // armors
                 break;

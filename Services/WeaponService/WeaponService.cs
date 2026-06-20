@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using GeneralsZeroHourEditor.Enumerations;
 using GeneralsZeroHourEditor.Models.Weapon;
 using GeneralsZeroHourEditor.Services.DataService;
 
@@ -76,7 +77,18 @@ public class WeaponService(IDataService dataService) : IWeaponService
                         case var _ when key.Equals("ProjectileDetonationOCL", StringComparison.OrdinalIgnoreCase):
                             model.ProjectileDetonationOCL = values.FirstOrDefault() ?? string.Empty; break;
                         case var _ when key.Equals("ProjectileCollidesWith", StringComparison.OrdinalIgnoreCase):
-                            model.ProjectileCollidesWith = string.Join(' ', values); break;
+                        {
+                            var mask = ProjectileCollidesWith.NONE;
+                            foreach (var token in values.SelectMany(v => (v ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)))
+                            {
+                                if (Enum.TryParse<ProjectileCollidesWith>(token, true, out var flag))
+                                {
+                                    mask |= flag;
+                                }
+                            }
+                            model.ProjectileCollidesWith = mask;
+                            break;
+                        }
                         case var _ when key.Equals("FireFX", StringComparison.OrdinalIgnoreCase):
                             model.FireFX = values.FirstOrDefault() ?? string.Empty; break;
                         case var _ when key.Equals("RadiusDamageAffects", StringComparison.OrdinalIgnoreCase):
@@ -88,9 +100,23 @@ public class WeaponService(IDataService dataService) : IWeaponService
                         case var _ when key.Equals("WeaponSpeed", StringComparison.OrdinalIgnoreCase):
                             model.WeaponSpeed = values.FirstOrDefault() ?? string.Empty; break;
                         case var _ when key.Equals("DamageType", StringComparison.OrdinalIgnoreCase):
-                            model.DamageType = values.FirstOrDefault() ?? string.Empty; break;
+                        {
+                            var token = values.FirstOrDefault();
+                            if (token is not null && Enum.TryParse<DamageType>(token, true, out var dt))
+                            {
+                                model.DamageType = dt;
+                            }
+                            break;
+                        }
                         case var _ when key.Equals("DeathType", StringComparison.OrdinalIgnoreCase):
-                            model.DeathType = values.FirstOrDefault() ?? string.Empty; break;
+                        {
+                            var token = values.FirstOrDefault();
+                            if (token is not null && Enum.TryParse<DeathType>(token, true, out var de))
+                            {
+                                model.DeathType = de;
+                            }
+                            break;
+                        }
                         case var _ when key.Equals("WeaponBonusDamageScalar", StringComparison.OrdinalIgnoreCase):
                             model.WeaponBonusDamageScalar = string.Join(' ', values); break;
                         case var _ when key.Equals("Meta", StringComparison.OrdinalIgnoreCase):

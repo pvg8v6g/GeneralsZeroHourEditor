@@ -127,7 +127,7 @@ public class GameObjectModel : BaseModel
 
     #region Movement
 
-    public ObservableCollection<KeyValuePair<LocomotorConditions, string>> LocomotorSets { get; } = [];
+    public ObservableCollection<LocomotorSetModel> LocomotorSets { get; } = [];
 
     #endregion
 

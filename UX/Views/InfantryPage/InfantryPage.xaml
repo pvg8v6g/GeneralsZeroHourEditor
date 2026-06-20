@@ -54,6 +54,7 @@
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
           <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -209,6 +210,10 @@
                   </ListView.ItemTemplate>
                 </ListView>
               </StackPanel>
+
+              <Button>
+
+              </Button>
 
               <!-- KindOf flags (checkbox list) -->
               <ScrollView VerticalScrollBarVisibility="Auto"
@@ -579,6 +584,75 @@
                             ToolTipService.ToolTip="Remove"
                             AutomationProperties.Name="Remove"
                             Command="{Binding ElementName=PageRoot, Path=ViewModel.RemoveWeaponSetCommand}"
+                            CommandParameter="{Binding}"
+                            Background="{StaticResource RedBrush}">
+                      <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
+                    </Button>
+                  </Grid>
+                </DataTemplate>
+              </ListView.ItemTemplate>
+            </ListView>
+          </StackPanel>
+        </enginePanel:EnginePanel>
+
+        <!-- 6) Movement -->
+        <enginePanel:EnginePanel Grid.Row="4"
+                                 Title="Movement"
+                                 Visibility="{x:Bind ViewModel.SelectedItem, Converter={StaticResource NullToCollapsedConverter}, Mode=OneWay}">
+          <!-- Locomotors -->
+          <StackPanel Spacing="6">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="Locomotor Sets" FontWeight="SemiBold" />
+              <Button Grid.Column="1"
+                      Content="Add Set"
+                      Command="{x:Bind ViewModel.AddLocomotorCommand}" />
+            </Grid>
+
+            <ListView x:Name="LocomotorList"
+                      Tag="{x:Bind ViewModel, Mode=OneWay}"
+                      ItemsSource="{x:Bind ViewModel.SelectedItem.LocomotorSets, Mode=OneWay}">
+              <ListView.ItemTemplate>
+                <DataTemplate x:DataType="models:LocomotorSetModel">
+                  <Grid ColumnSpacing="8"
+                        RowSpacing="6"
+                        Padding="0 8 0 10">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <ComboBox Grid.Column="0"
+                              Grid.Row="0"
+                              MinWidth="200"
+                              MaxWidth="200"
+                              HorizontalContentAlignment="Stretch"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ItemsSource="{ui:EnumValues Type=enumerations:LocomotorConditions}"
+                              SelectedItem="{x:Bind Condition, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
+                    <ComboBox Grid.Column="1"
+                              Grid.Row="0"
+                              MinWidth="200"
+                              MaxWidth="200"
+                              Header="Locomotors"
+                              ItemsSource="{Binding ElementName=LocomotorList, Path=Tag.GameDataService.GameLocomotors}"
+                              SelectedItem="{x:Bind Locomotor, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+
+                    <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
+                    <Button Grid.Column="2"
+                            Grid.Row="0"
+                            ToolTipService.ToolTip="Remove"
+                            AutomationProperties.Name="Remove"
+                            Command="{Binding ElementName=LocomotorList, Path=Tag.RemoveLocomotorCommand}"
                             CommandParameter="{Binding}"
                             Background="{StaticResource RedBrush}">
                       <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" />
